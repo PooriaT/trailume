@@ -103,10 +103,18 @@ class InsightFlags(BaseModel):
     repeated_route_name: str | None = Field(default=None, alias="repeatedRouteName")
 
 
+
+
+class NarrativeBlock(BaseModel):
+    title: str
+    summary: str
+    highlights: list[str] = Field(min_length=3, max_length=5)
+    reflection: str
+    source: Literal["ollama", "fallback"]
+
 class RecapGenerateResponse(BaseModel):
     title: str
-    narrative_summary: str = Field(alias="narrativeSummary")
-    narrative_source: Literal["ollama", "fallback"] = Field(alias="narrativeSource")
+    narrative: NarrativeBlock
     summary_metrics: SummaryMetrics = Field(alias="summaryMetrics")
     key_metrics: list[KeyMetric] = Field(alias="keyMetrics")
     highlight_cards: list[HighlightCard] = Field(alias="highlightCards")

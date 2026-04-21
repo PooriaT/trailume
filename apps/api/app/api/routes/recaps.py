@@ -4,7 +4,8 @@ from fastapi import APIRouter
 
 from app.models.contracts import RecapGenerateRequest, RecapGenerateResponse
 from app.services.analytics.engine import AnalyticsEngine
-from app.services.narrative.ollama import NarrativeService
+from app.services.narrative.models import NarrativeInput
+from app.services.narrative.service import NarrativeService
 from app.services.strava.client import StravaService
 
 router = APIRouter(tags=["recaps"])
@@ -14,7 +15,7 @@ router = APIRouter(tags=["recaps"])
 def generate_recap(payload: RecapGenerateRequest) -> RecapGenerateResponse:
     strava_service = StravaService()
     analytics = AnalyticsEngine()
-    narrative = NarrativeService()
+    narrative_service = NarrativeService()
 
     start_dt = datetime.combine(payload.start_date, time.min)
     end_dt = datetime.combine(payload.end_date, time.max)
@@ -26,12 +27,26 @@ def generate_recap(payload: RecapGenerateRequest) -> RecapGenerateResponse:
         start_date=payload.start_date,
         end_date=payload.end_date,
     )
-    story, source = narrative.generate(insights.narrative_seed)
+
+    narrative = narrative_service.generate(
+        NarrativeInput(
+            recap_title=insights.title,
+            summary_metrics=insights.summary_metrics,
+            highlight_cards=insights.highlight_cards,
+            insight_flags=insights.insight_flags,
+            metadata=insights.metadata,
+        )
+    )
 
     return RecapGenerateResponse(
         title=insights.title,
-        narrativeSummary=story,
-        narrativeSource=source,
+        narrative={
+            "title": narrative.title,
+            "summary": narrative.summary,
+            "highlights": narrative.highlights,
+            "reflection": narrative.reflection,
+            "source": narrative.source,
+        },
         summaryMetrics=insights.summary_metrics,
         keyMetrics=insights.key_metrics,
         highlightCards=insights.highlight_cards,

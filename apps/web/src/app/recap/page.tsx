@@ -41,9 +41,15 @@ export default function RecapPage() {
   return (
     <main className="container grid">
       <section className="card">
-        <h1>{recap.title}</h1>
-        <p>{recap.narrativeSummary}</p>
-        <p><strong>Narrative source:</strong> {recap.narrativeSource}</p>
+        <h1>{recap.narrative.title}</h1>
+        <p>{recap.narrative.summary}</p>
+        <ul>
+          {recap.narrative.highlights.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p>{recap.narrative.reflection}</p>
+        <p><strong>Narrative provider:</strong> {recap.narrative.source}</p>
         <p>
           <strong>Filters:</strong> {recap.metadata.startDate} to {recap.metadata.endDate} · {recap.metadata.selectedActivityType}
         </p>

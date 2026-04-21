@@ -78,10 +78,17 @@ export interface RecapMetadata {
   } | null;
 }
 
+export interface RecapNarrative {
+  title: string;
+  summary: string;
+  highlights: string[];
+  reflection: string;
+  source: "ollama" | "fallback";
+}
+
 export interface RecapResponse {
   title: string;
-  narrativeSummary: string;
-  narrativeSource: "ollama" | "fallback";
+  narrative: RecapNarrative;
   summaryMetrics: SummaryMetrics;
   keyMetrics: KeyMetric[];
   highlightCards: HighlightCard[];

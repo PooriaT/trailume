@@ -60,6 +60,9 @@ Copy `.env.example` values into environment files:
   - `OLLAMA_BASE_URL=http://localhost:11434`
   - `OLLAMA_MODEL=gemma4`
   - `OLLAMA_TIMEOUT_SECONDS=45`
+  - `OLLAMA_TEMPERATURE=0.2`
+  - `OLLAMA_TOP_P=0.9`
+  - `OLLAMA_NUM_PREDICT=320`
   - `SESSION_COOKIE_SECURE=false` (set to `true` in HTTPS deployments)
   - `SESSION_COOKIE_SAMESITE=lax` (use `none` for cross-site frontend/API over HTTPS)
 
@@ -94,6 +97,22 @@ pnpm dev
 Frontend: http://localhost:3000  
 Backend docs: http://localhost:8000/docs
 
+
+### 6) Run Ollama locally (optional, recommended)
+
+Trailume can generate narratives with a local Ollama model, but it will **gracefully fall back** to a deterministic template generator when Ollama is unavailable.
+
+```bash
+# Install and run Ollama (https://ollama.com/download)
+ollama serve
+
+# In a separate terminal, pull the configured model
+ollama pull gemma4
+```
+
+If you use a different model, set `OLLAMA_MODEL=<model-name>` in `apps/api/.env`.
+
+
 ## API flow (MVP)
 
 1. Frontend sends user to `GET /api/v1/auth/strava/login`.
@@ -125,6 +144,21 @@ The recap API now returns a stable, typed payload with deterministic metrics and
 - **Repeated-route tendency:** approximate signal based on normalized activity name repetition; emitted only when the same normalized name appears at least 3 times.
 
 These heuristics intentionally favor conservative, explainable outputs over aggressive interpretation so the downstream narrative layer can remain honest.
+
+
+## Narrative generation behavior
+
+- Recap analytics are computed first and remain deterministic.
+- The narrative layer consumes only structured recap analytics payload fields (`summaryMetrics`, `highlightCards`, `insightFlags`, `metadata`) and never raw activity streams.
+- Provider boundary:
+  - `OllamaNarrativeProvider` (primary local LLM provider)
+  - `DeterministicNarrativeProvider` (first-class fallback)
+- Fallback triggers automatically when:
+  - `OLLAMA_MODEL` is empty or not present in local Ollama tags
+  - Ollama is unreachable (`OLLAMA_BASE_URL`)
+  - generation/parsing fails
+
+This keeps the app fully functional without cloud dependencies and without requiring Ollama uptime.
 
 ## Tests
 
