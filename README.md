@@ -202,7 +202,7 @@ CI validates:
 - backend dependency install + backend test suite (`poetry run pytest`)
 
 CI assumptions:
-- lockfiles are committed (`pnpm-lock.yaml` and `apps/api/poetry.lock`) so installs stay reproducible
+- dependencies are installed with the repository package managers (`pnpm` and Poetry) in CI
 - backend tests run with safe dummy Strava/Ollama env values; CI does **not** require live Strava or Ollama services
 
 ## Current MVP scope
