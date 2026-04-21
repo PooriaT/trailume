@@ -29,9 +29,14 @@ def test_recap_endpoint_returns_contract_shape() -> None:
     assert "title" in body
     assert "narrativeSummary" in body
     assert "narrativeSource" in body
+    assert "summaryMetrics" in body
     assert "keyMetrics" in body
+    assert "highlightCards" in body
     assert "chartPoints" in body
+    assert "trendSeries" in body
     assert "standoutActivities" in body
+    assert "insightFlags" in body
+    assert "metadata" in body
 
 
 def test_activities_requires_auth() -> None:

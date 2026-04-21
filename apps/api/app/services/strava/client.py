@@ -144,6 +144,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=5),
                 distance_m=42000,
                 elevation_gain_m=680,
+                moving_time_s=6100,
+                elapsed_time_s=6600,
             ),
             Activity(
                 id="a2",
@@ -152,6 +154,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=3),
                 distance_m=73500,
                 elevation_gain_m=540,
+                moving_time_s=9800,
+                elapsed_time_s=10400,
             ),
             Activity(
                 id="a3",
@@ -160,6 +164,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=1),
                 distance_m=21000,
                 elevation_gain_m=170,
+                moving_time_s=3400,
+                elapsed_time_s=3700,
             ),
         ]
         return [

@@ -109,6 +109,21 @@ Backend docs: http://localhost:8000/docs
 - `GET /api/v1/auth/strava/status`
 - `GET /api/v1/activities?start=<iso>&end=<iso>&type=<optional>`
 
+
+## Analytics recap payload notes
+
+The recap API now returns a stable, typed payload with deterministic metrics and rule-based insight flags.
+
+- **Deterministic only:** analytics are pure calculations over normalized activities; no LLM calls are used for metrics/highlights.
+- **Missing-data behavior:** moving time, elapsed time, and elevation are reported as `null` when unavailable instead of inferring synthetic values.
+- **Fastest effort metric:** fastest is selected by average moving speed (`distance / moving_time`) and requires at least 1 km to reduce noisy short-activity spikes.
+- **Consistency and trend heuristics:**
+  - Most consistent week = week with the highest number of active days (tie-breakers use activity count then date).
+  - Frequency trend = compares first-half vs second-half activity density and reports `increasing`, `decreasing`, or `flat`.
+- **Repeated-route tendency:** approximate signal based on normalized activity name repetition; emitted only when the same normalized name appears at least 3 times.
+
+These heuristics intentionally favor conservative, explainable outputs over aggressive interpretation so the downstream narrative layer can remain honest.
+
 ## Tests
 
 From `apps/api`:
@@ -127,7 +142,7 @@ python -m pytest
 
 ### Analytics
 - [ ] Add activity-type-specific insight strategies (cycling, running, swimming).
-- [ ] Add trend metrics (weekly consistency, load deltas, PR detection).
+- [x] Add trend metrics (weekly consistency and frequency deltas).
 - [ ] Add stronger standout ranking heuristics.
 
 ### Narrative
