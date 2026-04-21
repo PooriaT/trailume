@@ -39,8 +39,9 @@ trailume/
 
 - Node.js 20+
 - pnpm 9+
-- Python 3.11+
+- Python 3.13+
 - (Optional but recommended) Ollama running locally
+- Default Ollama model for this scaffold: `gemma4` (override with `OLLAMA_MODEL`)
 
 ## 2) Configure environment
 

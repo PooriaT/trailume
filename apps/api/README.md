@@ -2,6 +2,8 @@
 
 FastAPI backend for Trailume MVP.
 
+Default narrative model is `gemma4` via `OLLAMA_MODEL`.
+
 ## Run
 
 ```bash

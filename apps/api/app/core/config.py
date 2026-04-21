@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     strava_redirect_uri: str = "http://localhost:8000/api/v1/auth/strava/callback"
 
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1"
+    ollama_model: str = "gemma4"
     ollama_timeout_seconds: int = 45
 
 
