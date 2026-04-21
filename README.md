@@ -60,6 +60,8 @@ Copy `.env.example` values into environment files:
   - `OLLAMA_BASE_URL=http://localhost:11434`
   - `OLLAMA_MODEL=gemma4`
   - `OLLAMA_TIMEOUT_SECONDS=45`
+  - `SESSION_COOKIE_SECURE=false` (set to `true` in HTTPS deployments)
+  - `SESSION_COOKIE_SAMESITE=lax` (use `none` for cross-site frontend/API over HTTPS)
 
 ### 3) Configure Strava developer app (exact values)
 

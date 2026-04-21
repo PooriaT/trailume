@@ -99,8 +99,8 @@ class StravaService:
         activity_type: str | None = None,
     ) -> list[Activity]:
         params = {
-            "after": int(start_date.replace(tzinfo=timezone.utc).timestamp()),
-            "before": int(end_date.replace(tzinfo=timezone.utc).timestamp()),
+            "after": self._to_unix_utc(start_date),
+            "before": self._to_unix_utc(end_date),
             "page": 1,
             "per_page": 100,
         }
@@ -134,6 +134,12 @@ class StravaService:
             params["page"] += 1
 
         return activities
+
+
+    def _to_unix_utc(self, value: datetime) -> int:
+        if value.tzinfo is None:
+            return int(value.replace(tzinfo=timezone.utc).timestamp())
+        return int(value.astimezone(timezone.utc).timestamp())
 
     def fetch_mock_activities(self, start_date: datetime, end_date: datetime, activity_type: str) -> list[Activity]:
         sample = [

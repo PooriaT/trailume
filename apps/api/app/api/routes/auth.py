@@ -26,12 +26,20 @@ def start_strava_auth() -> RedirectResponse:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     response = RedirectResponse(url=auth_url)
+    cookie_secure = settings.session_cookie_secure
+    cookie_samesite = settings.session_cookie_samesite
+
+    if settings.web_app_url.startswith("https://") and not settings.session_cookie_secure:
+        cookie_secure = True
+    if cookie_secure and settings.session_cookie_samesite == "lax" and settings.web_app_url.startswith("https://"):
+        cookie_samesite = "none"
+
     response.set_cookie(
         key=SESSION_COOKIE,
         value=session_id,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=cookie_secure,
+        samesite=cookie_samesite,
         max_age=60 * 60 * 24 * 30,
     )
     return response
