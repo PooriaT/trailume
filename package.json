@@ -1,0 +1,9 @@
+{
+  "name": "trailume",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @trailume/web dev",
+    "lint:web": "pnpm --filter @trailume/web lint"
+  }
+}
