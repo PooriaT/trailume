@@ -55,7 +55,7 @@ packages/
 - Node.js 20+
 - pnpm 9+
 - Python 3.13
-- Poetry 2.0+ (required for `[dependency-groups]` in `apps/api/pyproject.toml`)
+- Poetry 2.0+
 - Optional: Ollama (for local LLM narrative generation)
 
 ### 1) Create env files
@@ -190,6 +190,20 @@ pnpm test:web
 # or
 cd apps/web && pnpm test
 ```
+
+## Continuous Integration
+
+GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs on:
+- every pull request
+- pushes to `main`
+
+CI validates:
+- frontend dependency install + frontend test suite (`pnpm test:web`)
+- backend dependency install + backend test suite (`poetry run pytest`)
+
+CI assumptions:
+- dependencies are installed with the repository package managers (`pnpm` and Poetry) in CI
+- backend tests run with safe dummy Strava/Ollama env values; CI does **not** require live Strava or Ollama services
 
 ## Current MVP scope
 

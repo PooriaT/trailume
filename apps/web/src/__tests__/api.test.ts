@@ -1,17 +1,30 @@
 import { ApiError, fetchActivities } from "@/lib/api";
 
+type MockResponseShape = {
+  ok: boolean;
+  status: number;
+  json: jest.Mock;
+  text: jest.Mock;
+};
+
+function mockJsonResponse(payload: unknown, status = 200): MockResponseShape {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: jest.fn().mockResolvedValue(payload),
+    text: jest.fn().mockResolvedValue(JSON.stringify(payload)),
+  };
+}
+
 describe("api client", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it("builds expected activities query parameters", async () => {
-    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ activities: [], empty: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(mockJsonResponse({ activities: [], empty: true }) as unknown as Response);
 
     await fetchActivities({
       startDate: "2026-01-01",
@@ -28,14 +41,13 @@ describe("api client", () => {
 
   it("raises ApiError with backend detail message", async () => {
     jest.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ detail: "Strava auth required" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }),
+      mockJsonResponse({ detail: "Strava auth required" }, 401) as unknown as Response,
     );
 
     await expect(
       fetchActivities({ startDate: "2026-01-01", endDate: "2026-01-31", activityType: "all" }),
-    ).rejects.toEqual(expect.objectContaining<ApiError>({ message: "Strava auth required", status: 401 }));
+    ).rejects.toEqual(
+      expect.objectContaining<ApiError>({ message: "Strava auth required", status: 401 }),
+    );
   });
 });

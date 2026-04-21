@@ -29,7 +29,7 @@ If Ollama is unavailable or returns invalid output, fallback generation is used 
 
 ## Poetry workflow
 
-Requires Poetry 2.0+ (the backend uses `[dependency-groups]` in `pyproject.toml`).
+Requires Poetry 2.0+.
 
 Install dependencies:
 

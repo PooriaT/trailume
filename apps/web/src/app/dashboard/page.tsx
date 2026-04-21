@@ -42,7 +42,11 @@ export default function DashboardPage() {
         <form
           className="filters-grid"
           onSubmit={handleSubmit(async (values) => {
-            await activitiesMutation.mutateAsync(values);
+            try {
+              await activitiesMutation.mutateAsync(values);
+            } catch {
+              // Mutation error state is rendered below; avoid unhandled rejection in submit handler.
+            }
           })}
         >
           <label>
