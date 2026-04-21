@@ -5,14 +5,14 @@
   "scripts": {
     "dev": "bash -lc 'pids=(); cleanup(){ for pid in \"${pids[@]}\"; do kill \"$pid\" 2>/dev/null || true; done; }; trap cleanup EXIT INT TERM; pnpm dev:api & pids+=($!); pnpm dev:web & pids+=($!); wait \"${pids[@]}\"'",
     "dev:web": "pnpm --filter @trailume/web dev",
-    "dev:api": "bash -lc 'cd apps/api && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
+    "dev:api": "bash -lc 'cd apps/api && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
     "build:web": "pnpm --filter @trailume/web build",
     "start:web": "pnpm --filter @trailume/web start",
     "lint": "pnpm lint:web && pnpm lint:api",
     "lint:web": "pnpm --filter @trailume/web lint",
-    "lint:api": "bash -lc 'cd apps/api && python -m ruff check app tests'",
-    "format:api": "bash -lc 'cd apps/api && python -m ruff format app tests'",
-    "test:api": "bash -lc 'cd apps/api && python -m pytest'",
+    "lint:api": "bash -lc 'cd apps/api && poetry run ruff check app tests'",
+    "format:api": "bash -lc 'cd apps/api && poetry run ruff format app tests'",
+    "test:api": "bash -lc 'cd apps/api && poetry run pytest'",
     "format": "pnpm format:api"
   }
 }
