@@ -35,7 +35,9 @@ class AnalyticsEngine:
     ) -> InsightBundle:
         ordered_activities = sorted(activities, key=lambda item: item.start_time)
         if not ordered_activities:
-            return self._empty_bundle(activity_type=activity_type, start_date=start_date, end_date=end_date)
+            return self._empty_bundle(
+                activity_type=activity_type, start_date=start_date, end_date=end_date
+            )
 
         day_list = _date_range(start_date, end_date)
         date_counts = {day: 0 for day in day_list}
@@ -76,8 +78,12 @@ class AnalyticsEngine:
             date_elevation[activity_day] += max(activity.elevation_gain_m, 0.0)
 
             week_data[week_start]["count"] = int(week_data[week_start]["count"]) + 1
-            week_data[week_start]["distance"] = float(week_data[week_start]["distance"]) + activity.distance_m
-            week_data[week_start]["elevation"] = float(week_data[week_start]["elevation"]) + max(activity.elevation_gain_m, 0.0)
+            week_data[week_start]["distance"] = (
+                float(week_data[week_start]["distance"]) + activity.distance_m
+            )
+            week_data[week_start]["elevation"] = float(week_data[week_start]["elevation"]) + max(
+                activity.elevation_gain_m, 0.0
+            )
             cast_days = week_data[week_start]["days"]
             if isinstance(cast_days, set):
                 cast_days.add(activity_day)
@@ -102,12 +108,16 @@ class AnalyticsEngine:
                 per_type["movingTimeS"] = int(per_type["movingTimeS"]) + activity.moving_time_s
             if activity.elapsed_time_s and activity.elapsed_time_s > 0:
                 per_type["elapsedTimeS"] = int(per_type["elapsedTimeS"]) + activity.elapsed_time_s
-            per_type["elevationGainM"] = float(per_type["elevationGainM"]) + max(activity.elevation_gain_m, 0.0)
+            per_type["elevationGainM"] = float(per_type["elevationGainM"]) + max(
+                activity.elevation_gain_m, 0.0
+            )
 
         total_count = len(ordered_activities)
         avg_distance_m = total_distance_m / total_count
         avg_moving_time_s = (total_moving_time_s / moving_samples) if moving_samples else None
-        avg_speed_mps = (timed_distance_m / total_moving_time_s) if total_moving_time_s > 0 else None
+        avg_speed_mps = (
+            (timed_distance_m / total_moving_time_s) if total_moving_time_s > 0 else None
+        )
 
         longest = max(ordered_activities, key=lambda item: item.distance_m)
         highest_elevation = max(ordered_activities, key=lambda item: item.elevation_gain_m)
@@ -117,21 +127,30 @@ class AnalyticsEngine:
             for activity in ordered_activities
             if activity.distance_m >= 1000
         ]
-        speed_candidates = [(activity, speed) for activity, speed in speed_candidates if speed is not None]
+        speed_candidates = [
+            (activity, speed) for activity, speed in speed_candidates if speed is not None
+        ]
         fastest = max(speed_candidates, key=lambda pair: pair[1])[0] if speed_candidates else None
 
         most_active_day_date, most_active_day_count = max(
-            date_counts.items(), key=lambda pair: (pair[1], date_distance.get(pair[0], 0.0), pair[0])
+            date_counts.items(),
+            key=lambda pair: (pair[1], date_distance.get(pair[0], 0.0), pair[0]),
         )
 
         week_aggregates = self._build_week_aggregates(week_data)
         highest_volume_week = (
-            max(week_aggregates, key=lambda week: (week.distance_m, week.activity_count, week.week_start))
+            max(
+                week_aggregates,
+                key=lambda week: (week.distance_m, week.activity_count, week.week_start),
+            )
             if week_aggregates
             else None
         )
         most_consistent_week = (
-            max(week_aggregates, key=lambda week: (week.active_days, week.activity_count, week.week_start))
+            max(
+                week_aggregates,
+                key=lambda week: (week.active_days, week.activity_count, week.week_start),
+            )
             if week_aggregates
             else None
         )
@@ -175,7 +194,12 @@ class AnalyticsEngine:
         key_metrics = [
             {"label": "Activities", "value": str(total_count)},
             {"label": "Distance", "value": f"{total_distance_m / 1000:.1f} km"},
-            {"label": "Moving time", "value": self._format_duration(total_moving_time_s) if total_moving_time_s else "N/A"},
+            {
+                "label": "Moving time",
+                "value": self._format_duration(total_moving_time_s)
+                if total_moving_time_s
+                else "N/A",
+            },
             {"label": "Avg distance", "value": f"{avg_distance_m / 1000:.1f} km"},
         ]
 
@@ -221,14 +245,18 @@ class AnalyticsEngine:
                 }
             )
 
-        summary_metrics: dict[str, float | int | None | dict[str, dict[str, float | int | None]]] = {
+        summary_metrics: dict[
+            str, float | int | None | dict[str, dict[str, float | int | None]]
+        ] = {
             "activityCount": total_count,
             "totalDistanceM": round(total_distance_m, 2),
             "totalMovingTimeS": total_moving_time_s if moving_samples else None,
             "totalElapsedTimeS": total_elapsed_time_s if elapsed_samples else None,
             "totalElevationGainM": round(total_elevation_m, 2) if elevation_samples else None,
             "averageDistanceM": round(avg_distance_m, 2),
-            "averageMovingTimeS": round(avg_moving_time_s, 2) if avg_moving_time_s is not None else None,
+            "averageMovingTimeS": round(avg_moving_time_s, 2)
+            if avg_moving_time_s is not None
+            else None,
             "averageSpeedMps": round(avg_speed_mps, 4) if avg_speed_mps is not None else None,
             "totalsByActivityType": by_type,
         }
@@ -284,15 +312,10 @@ class AnalyticsEngine:
             },
         }
 
-        seed = (
-            f"Completed {total_count} activities and {total_distance_m / 1000:.1f} km from "
-            f"{start_date.isoformat()} to {end_date.isoformat()}. "
-            f"Top day: {most_active_day_date.isoformat()} ({most_active_day_count} activities)."
-        )
-
         return InsightBundle(
-            title=f"Your {activity_type.title()} Recap" if activity_type != "all" else "Your Activity Recap",
-            narrative_seed=seed,
+            title=f"Your {activity_type.title()} Recap"
+            if activity_type != "all"
+            else "Your Activity Recap",
             summary_metrics=summary_metrics,
             key_metrics=key_metrics,
             highlight_cards=highlight_cards,
@@ -303,11 +326,12 @@ class AnalyticsEngine:
             metadata=metadata,
         )
 
-    def _empty_bundle(self, *, activity_type: str, start_date: date, end_date: date) -> InsightBundle:
+    def _empty_bundle(
+        self, *, activity_type: str, start_date: date, end_date: date
+    ) -> InsightBundle:
         day_list = _date_range(start_date, end_date)
         return InsightBundle(
             title="No activities in this range",
-            narrative_seed="The selected period has no tracked activities.",
             summary_metrics={
                 "activityCount": 0,
                 "totalDistanceM": 0.0,
@@ -326,9 +350,16 @@ class AnalyticsEngine:
                 {"label": "Avg distance", "value": "0.0 km"},
             ],
             highlight_cards=[],
-            chart_points=[{"date": day.isoformat(), "distanceKm": 0.0, "activityCount": 0} for day in day_list],
+            chart_points=[
+                {"date": day.isoformat(), "distanceKm": 0.0, "activityCount": 0} for day in day_list
+            ],
             trend_series=[
-                {"bucketStart": day.isoformat(), "bucketType": "day", "activityCount": 0, "distanceKm": 0.0}
+                {
+                    "bucketStart": day.isoformat(),
+                    "bucketType": "day",
+                    "activityCount": 0,
+                    "distanceKm": 0.0,
+                }
                 for day in day_list
             ],
             standout_activities=[],
@@ -360,8 +391,12 @@ class AnalyticsEngine:
         first_half_days = [item.start_time.date() for item in ordered_activities[:midpoint]]
         second_half_days = [item.start_time.date() for item in ordered_activities[midpoint:]]
 
-        first_density = len(first_half_days) / max((max(first_half_days) - min(first_half_days)).days + 1, 1)
-        second_density = len(second_half_days) / max((max(second_half_days) - min(second_half_days)).days + 1, 1)
+        first_density = len(first_half_days) / max(
+            (max(first_half_days) - min(first_half_days)).days + 1, 1
+        )
+        second_density = len(second_half_days) / max(
+            (max(second_half_days) - min(second_half_days)).days + 1, 1
+        )
 
         if second_density - first_density > 0.08:
             return "increasing"
@@ -401,7 +436,9 @@ class AnalyticsEngine:
         compact = " ".join(lowered.split())
         return compact
 
-    def _build_week_aggregates(self, week_data: dict[date, dict[str, float | int | set[date]]]) -> list[WeekAggregate]:
+    def _build_week_aggregates(
+        self, week_data: dict[date, dict[str, float | int | set[date]]]
+    ) -> list[WeekAggregate]:
         aggregates: list[WeekAggregate] = []
         for week_start, metrics in sorted(week_data.items(), key=lambda item: item[0]):
             days_set = metrics["days"]

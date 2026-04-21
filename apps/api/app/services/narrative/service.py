@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import json
-
-import httpx
-from pydantic import ValidationError
+import logging
 
 from app.services.narrative.deterministic import DeterministicNarrativeProvider
 from app.services.narrative.models import NarrativeInput, NarrativeOutput
-from app.services.narrative.ollama import OllamaNarrativeProvider
+from app.services.narrative.ollama import OllamaNarrativeProvider, OllamaProviderError
 from app.services.narrative.providers import NarrativeProvider
+
+logger = logging.getLogger(__name__)
 
 
 class NarrativeService:
@@ -26,15 +25,10 @@ class NarrativeService:
                 generated = self.primary.generate(payload)
                 if 3 <= len(generated.highlights) <= 5:
                     return generated
-            except (
-                OSError,
-                ValueError,
-                KeyError,
-                TypeError,
-                json.JSONDecodeError,
-                ValidationError,
-                httpx.HTTPError,
-            ):
-                pass
+                raise OllamaProviderError(
+                    "Primary provider returned an invalid number of highlights"
+                )
+            except OllamaProviderError as exc:
+                logger.warning("Primary narrative provider failed, using fallback: %s", exc)
 
         return self.fallback.generate(payload)

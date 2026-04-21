@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { generateRecap } from "@/lib/api";
+import { ApiError, generateRecap } from "@/lib/api";
 import { HeroRecapSection } from "@/components/hero-recap-section";
 import { StatCardsSection } from "@/components/stat-cards-section";
 import { HighlightCardsSection } from "@/components/highlight-cards-section";
@@ -30,12 +30,12 @@ function RecapLoadingState() {
   );
 }
 
-function RecapErrorState() {
+function RecapErrorState({ message }: { message?: string }) {
   return (
     <main className="page-shell">
       <section className="panel error-panel">
         <h1>Couldn’t generate this recap</h1>
-        <p>Try refreshing, adjusting the date range, or checking Strava connection status.</p>
+        <p>{message ?? "Try refreshing, adjusting the date range, or checking Strava connection status."}</p>
         <Link className="btn btn-primary" href="/dashboard">
           Back to filters
         </Link>
@@ -65,7 +65,8 @@ export default function RecapPage() {
   }
 
   if (recapQuery.isError || !recapQuery.data) {
-    return <RecapErrorState />;
+    const message = recapQuery.error instanceof ApiError ? recapQuery.error.message : undefined;
+    return <RecapErrorState message={message} />;
   }
 
   const recap = recapQuery.data;

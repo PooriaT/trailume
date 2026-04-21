@@ -21,7 +21,6 @@ class Activity:
 @dataclass
 class InsightBundle:
     title: str
-    narrative_seed: str
     summary_metrics: dict[str, float | int | None | dict[str, dict[str, float | int | None]]]
     key_metrics: list[dict[str, str]]
     highlight_cards: list[dict[str, str]]

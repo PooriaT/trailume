@@ -13,6 +13,13 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # Node / Next
 node_modules/
 .pnpm-store/
@@ -28,9 +35,15 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
 .venv/
 venv/
 .envrc
+
+# Python packaging / local installs
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
 
 # Build / caches
 .cache/
@@ -40,3 +53,8 @@ venv/
 # Test artifacts
 htmlcov/
 coverage.xml
+
+# Local DB / runtime artifacts
+*.sqlite
+*.sqlite3
+*.db

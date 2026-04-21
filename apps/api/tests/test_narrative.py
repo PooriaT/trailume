@@ -1,7 +1,6 @@
-import httpx
-
 from app.services.narrative.deterministic import DeterministicNarrativeProvider
 from app.services.narrative.models import NarrativeInput, NarrativeOutput
+from app.services.narrative.ollama import OllamaProviderError
 from app.services.narrative.service import NarrativeService
 
 
@@ -45,9 +44,18 @@ def test_deterministic_provider_returns_required_sections() -> None:
 def test_deterministic_provider_guarantees_three_highlights_on_empty_inputs() -> None:
     payload = NarrativeInput(
         recap_title="No activities in this range",
-        summary_metrics={"activityCount": 0, "totalDistanceM": 0, "averageDistanceM": 0, "totalElevationGainM": None},
+        summary_metrics={
+            "activityCount": 0,
+            "totalDistanceM": 0,
+            "averageDistanceM": 0,
+            "totalElevationGainM": None,
+        },
         highlight_cards=[],
-        insight_flags={"frequencyTrend": "flat", "hasRepeatedRouteTendency": False, "repeatedRouteName": None},
+        insight_flags={
+            "frequencyTrend": "flat",
+            "hasRepeatedRouteTendency": False,
+            "repeatedRouteName": None,
+        },
         metadata={"rangeDays": 7, "selectedActivityType": "all", "mostActiveDay": None},
     )
 
@@ -62,18 +70,20 @@ class _UnavailablePrimaryProvider:
     def is_available(self) -> bool:
         return False
 
-    def generate(self, payload: NarrativeInput) -> NarrativeOutput:  # pragma: no cover - not reached
+    def generate(
+        self, payload: NarrativeInput
+    ) -> NarrativeOutput:  # pragma: no cover - not reached
         raise AssertionError("should not be called")
 
 
-class _HttpErrorPrimaryProvider:
+class _PrimaryProviderFailure:
     provider_name = "ollama"
 
     def is_available(self) -> bool:
         return True
 
     def generate(self, payload: NarrativeInput) -> NarrativeOutput:
-        raise httpx.ReadTimeout("timed out")
+        raise OllamaProviderError("timed out")
 
 
 def test_narrative_service_falls_back_when_primary_is_unavailable() -> None:
@@ -84,8 +94,8 @@ def test_narrative_service_falls_back_when_primary_is_unavailable() -> None:
     assert output.source == "fallback"
 
 
-def test_narrative_service_falls_back_on_http_failures() -> None:
-    service = NarrativeService(primary=_HttpErrorPrimaryProvider())
+def test_narrative_service_falls_back_on_primary_provider_failures() -> None:
+    service = NarrativeService(primary=_PrimaryProviderFailure())
 
     output = service.generate(_sample_payload())
 
