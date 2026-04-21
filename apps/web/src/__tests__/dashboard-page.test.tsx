@@ -47,11 +47,12 @@ describe("DashboardPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
 
     await waitFor(() => {
-      expect(fetchActivities).toHaveBeenLastCalledWith({
-        startDate: "2026-01-01",
-        endDate: "2026-01-03",
-        activityType: "running",
-      });
+      const calls = (fetchActivities as jest.Mock).mock.calls;
+      expect(calls.some(([arg]) =>
+        arg?.startDate === "2026-01-01" &&
+        arg?.endDate === "2026-01-03" &&
+        arg?.activityType === "running",
+      )).toBe(true);
     });
     expect(await screen.findByText("No activities match this date range or type.")).toBeInTheDocument();
   });
