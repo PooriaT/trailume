@@ -7,12 +7,12 @@ Trailume is an MVP web app that connects to Strava, analyzes activities in a sel
 This repository is intentionally split between a TypeScript frontend and Python backend to keep concerns clear:
 
 - **Frontend (`apps/web`)** focuses on UX and visualization.
-- **Backend (`apps/api`)** owns provider integration, analytics, and narrative generation.
+- **Backend (`apps/api`)** owns provider integration, token handling, analytics, and narrative generation.
 - **Future extensibility** is supported through module boundaries (provider adapter, analytics engine, narrative client).
 
 ### Tradeoffs
 
-- **MVP-first persistence:** the scaffold currently uses in-memory/mock flow to keep iteration fast; this means recap data is not durable across restarts.
+- **MVP token storage:** Strava OAuth tokens are stored in a backend in-memory store keyed by an opaque HTTP-only session cookie. This is secure enough for local MVP iteration but is not durable across backend restarts.
 - **Synchronous generation:** recap generation is sync API for simplicity; later we can move to async jobs if latency grows.
 - **Ollama optionality:** if Ollama is unavailable, backend returns a deterministic fallback narrative.
 
@@ -35,7 +35,7 @@ trailume/
 
 ## Local setup
 
-## 1) Prerequisites
+### 1) Prerequisites
 
 - Node.js 20+
 - pnpm 9+
@@ -43,16 +43,35 @@ trailume/
 - (Optional but recommended) Ollama running locally
 - Default Ollama model for this scaffold: `gemma4` (override with `OLLAMA_MODEL`)
 
-## 2) Configure environment
+### 2) Configure environment
 
 Copy `.env.example` values into environment files:
 
 - `apps/web/.env.local`
   - `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
 - `apps/api/.env`
-  - Use backend variables from `.env.example`
+  - `API_HOST=0.0.0.0`
+  - `API_PORT=8000`
+  - `APP_ENV=development`
+  - `WEB_APP_URL=http://localhost:3000`
+  - `STRAVA_CLIENT_ID=<from Strava app settings>`
+  - `STRAVA_CLIENT_SECRET=<from Strava app settings>`
+  - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
+  - `OLLAMA_BASE_URL=http://localhost:11434`
+  - `OLLAMA_MODEL=gemma4`
+  - `OLLAMA_TIMEOUT_SECONDS=45`
 
-## 3) Run backend
+### 3) Configure Strava developer app (exact values)
+
+1. Go to https://www.strava.com/settings/api and create an app.
+2. Set **Authorization Callback Domain** to `localhost` for local development.
+3. In your Trailume API env, set:
+   - `STRAVA_CLIENT_ID` to the app Client ID
+   - `STRAVA_CLIENT_SECRET` to the app Client Secret
+   - `STRAVA_REDIRECT_URI` to `http://localhost:8000/api/v1/auth/strava/callback`
+4. Ensure the frontend runs at `http://localhost:3000` and backend at `http://localhost:8000`.
+
+### 4) Run backend
 
 ```bash
 cd apps/api
@@ -62,7 +81,7 @@ pip install -e .[dev]
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 4) Run frontend
+### 5) Run frontend
 
 ```bash
 cd apps/web
@@ -73,14 +92,22 @@ pnpm dev
 Frontend: http://localhost:3000  
 Backend docs: http://localhost:8000/docs
 
-## API flow (current scaffold)
+## API flow (MVP)
 
-1. Frontend calls `/api/v1/auth/strava/start` to get OAuth URL (mock-ready).
-2. Strava callback endpoint `/api/v1/auth/strava/callback` is scaffolded for local integration testing.
-3. User selects filters on dashboard.
-4. Frontend calls `POST /api/v1/recaps/generate`.
-5. Backend fetches activities (mock if Strava unavailable), computes deterministic insights, then asks narrative service for a story.
-6. If Ollama fails/unavailable, backend returns deterministic fallback narrative and `narrative_source=fallback`.
+1. Frontend sends user to `GET /api/v1/auth/strava/login`.
+2. Backend creates OAuth state, stores pending session server-side, and redirects to Strava.
+3. Strava redirects to `GET /api/v1/auth/strava/callback`.
+4. Backend exchanges code for tokens, fetches athlete profile, stores tokens in server memory, and redirects user back to frontend.
+5. Frontend checks auth state via `GET /api/v1/auth/strava/status`.
+6. Frontend fetches normalized activities via `GET /api/v1/activities?start=...&end=...&type=...`.
+7. Recap generation still uses the deterministic/mock activity path for MVP continuity.
+
+## Current Strava endpoints
+
+- `GET /api/v1/auth/strava/login`
+- `GET /api/v1/auth/strava/callback`
+- `GET /api/v1/auth/strava/status`
+- `GET /api/v1/activities?start=<iso>&end=<iso>&type=<optional>`
 
 ## Tests
 
@@ -93,9 +120,10 @@ python -m pytest
 ## TODO roadmap
 
 ### Strava integration
-- [ ] Implement full OAuth callback token exchange and secure token storage.
-- [ ] Add Strava activity pagination and rate-limit handling.
-- [ ] Add athlete selection from authorized account(s).
+- [x] Implement OAuth code exchange and token refresh handling.
+- [x] Normalize Strava activity data into internal domain model.
+- [ ] Replace in-memory token storage with persistent encrypted storage.
+- [ ] Add Strava rate-limit aware retry/backoff strategy.
 
 ### Analytics
 - [ ] Add activity-type-specific insight strategies (cycling, running, swimming).

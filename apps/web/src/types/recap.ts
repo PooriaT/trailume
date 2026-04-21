@@ -27,3 +27,24 @@ export interface RecapResponse {
   chartPoints: { date: string; distanceKm: number }[];
   standoutActivities: StandoutActivity[];
 }
+
+export interface StravaAuthStatus {
+  connected: boolean;
+  provider: "strava";
+  athleteName?: string | null;
+}
+
+export interface StravaActivity {
+  id: string;
+  name: string;
+  activityType: string;
+  startTime: string;
+  distanceM: number;
+  elevationGainM: number;
+}
+
+export interface StravaActivitiesResponse {
+  activities: StravaActivity[];
+  empty: boolean;
+  message?: string;
+}

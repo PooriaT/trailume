@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation } from "@tanstack/react-query";
-import { getStravaStartUrl } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { getStravaAuthStatus, getStravaLoginUrl } from "@/lib/api";
 
 export default function HomePage() {
-  const authMutation = useMutation({ mutationFn: getStravaStartUrl });
+  const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
 
   return (
     <main className="container grid">
@@ -15,15 +15,19 @@ export default function HomePage() {
           Generate a compelling activity recap from Strava with deterministic insights and a local narrative model.
         </p>
         <button
-          onClick={async () => {
-            const data = await authMutation.mutateAsync();
-            window.location.href = data.authorizationUrl;
+          onClick={() => {
+            window.location.href = getStravaLoginUrl();
           }}
-          disabled={authMutation.isPending}
         >
-          {authMutation.isPending ? "Connecting..." : "Connect with Strava"}
+          Connect with Strava
         </button>
-        {authMutation.isError ? <p>Unable to start auth flow. Check backend config.</p> : null}
+
+        {statusQuery.data?.connected ? (
+          <p>✅ Connected to Strava as {statusQuery.data.athleteName ?? "your account"}.</p>
+        ) : (
+          <p>Not connected yet.</p>
+        )}
+        {statusQuery.isError ? <p>Unable to load auth status. Check backend config.</p> : null}
       </section>
 
       <section className="card">
@@ -31,7 +35,7 @@ export default function HomePage() {
         <ol>
           <li>Connect Strava</li>
           <li>Pick date range and activity type</li>
-          <li>Generate recap story and insights</li>
+          <li>Fetch activities and generate recap story</li>
         </ol>
         <Link href="/dashboard">Go to dashboard</Link>
       </section>

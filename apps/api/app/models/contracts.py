@@ -1,19 +1,20 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 ActivityType = Literal["all", "cycling", "running", "swimming"]
 
 
-class StravaAuthStartResponse(BaseModel):
-    authorization_url: str = Field(alias="authorizationUrl")
+class StravaAuthStatusResponse(BaseModel):
+    connected: bool
+    provider: str = "strava"
+    athlete_name: str | None = Field(default=None, alias="athleteName")
 
 
 class StravaAuthCallbackResponse(BaseModel):
     connected: bool
     provider: str = "strava"
-    code_preview: str = Field(alias="codePreview")
 
 
 class RecapGenerateRequest(BaseModel):
@@ -47,3 +48,20 @@ class RecapGenerateResponse(BaseModel):
     key_metrics: list[KeyMetric] = Field(alias="keyMetrics")
     chart_points: list[ChartPoint] = Field(alias="chartPoints")
     standout_activities: list[StandoutActivity] = Field(alias="standoutActivities")
+
+
+class ActivityResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+    name: str
+    activity_type: str = Field(alias="activityType")
+    start_time: str = Field(alias="startTime")
+    distance_m: float = Field(alias="distanceM")
+    elevation_gain_m: float = Field(alias="elevationGainM")
+
+
+class ActivitiesListResponse(BaseModel):
+    activities: list[ActivityResponse]
+    empty: bool
+    message: str | None = None
