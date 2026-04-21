@@ -53,10 +53,14 @@ class OllamaNarrativeProvider:
         raw_text = data.get("response", "")
         parsed = _OllamaNarrativeShape.model_validate(json.loads(raw_text))
 
+        cleaned_highlights = [item.strip() for item in parsed.highlights if item.strip()]
+        if not 3 <= len(cleaned_highlights) <= 5:
+            raise ValueError("Ollama response must contain 3-5 non-empty highlights")
+
         return NarrativeOutput(
             title=parsed.title.strip() or payload.recap_title,
             summary=parsed.summary.strip(),
-            highlights=[item.strip() for item in parsed.highlights if item.strip()],
+            highlights=cleaned_highlights,
             reflection=parsed.reflection.strip(),
             source=self.provider_name,
         )
