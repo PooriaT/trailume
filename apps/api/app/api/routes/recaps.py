@@ -19,7 +19,7 @@ def generate_recap(payload: RecapGenerateRequest) -> RecapGenerateResponse:
     start_dt = datetime.combine(payload.start_date, time.min)
     end_dt = datetime.combine(payload.end_date, time.max)
 
-    activities = strava_service.fetch_activities(start_dt, end_dt, payload.activity_type)
+    activities = strava_service.fetch_mock_activities(start_dt, end_dt, payload.activity_type)
     insights = analytics.build_insights(activities, payload.activity_type)
     story, source = narrative.generate(insights.narrative_seed)
 

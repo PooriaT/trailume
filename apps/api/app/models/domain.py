@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal
 
 
-ActivityType = Literal["cycling", "running", "swimming"]
+ActivityType = Literal["cycling", "running", "swimming", "other"]
 
 
 @dataclass

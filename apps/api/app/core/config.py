@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    web_app_url: str = "http://localhost:3000"
 
     strava_client_id: str = ""
     strava_client_secret: str = ""
