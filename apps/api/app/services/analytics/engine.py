@@ -46,6 +46,7 @@ class AnalyticsEngine:
         )
 
         total_distance_m = 0.0
+        timed_distance_m = 0.0
         total_moving_time_s = 0
         total_elapsed_time_s = 0
         total_elevation_m = 0.0
@@ -83,10 +84,10 @@ class AnalyticsEngine:
 
             total_distance_m += activity.distance_m
             total_elevation_m += max(activity.elevation_gain_m, 0.0)
-            if activity.elevation_gain_m > 0:
-                elevation_samples += 1
+            elevation_samples += 1
 
             if activity.moving_time_s and activity.moving_time_s > 0:
+                timed_distance_m += activity.distance_m
                 total_moving_time_s += activity.moving_time_s
                 moving_samples += 1
 
@@ -106,7 +107,7 @@ class AnalyticsEngine:
         total_count = len(ordered_activities)
         avg_distance_m = total_distance_m / total_count
         avg_moving_time_s = (total_moving_time_s / moving_samples) if moving_samples else None
-        avg_speed_mps = (total_distance_m / total_moving_time_s) if total_moving_time_s > 0 else None
+        avg_speed_mps = (timed_distance_m / total_moving_time_s) if total_moving_time_s > 0 else None
 
         longest = max(ordered_activities, key=lambda item: item.distance_m)
         highest_elevation = max(ordered_activities, key=lambda item: item.elevation_gain_m)

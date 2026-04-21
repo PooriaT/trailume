@@ -57,3 +57,38 @@ def test_build_insights_empty_range_has_stable_payload() -> None:
     assert len(result.chart_points) == 3
     assert result.insight_flags["frequencyTrend"] == "flat"
     assert result.metadata["mostActiveDay"] is None
+
+
+def test_average_speed_uses_only_timed_distance_and_zero_elevation_is_not_null() -> None:
+    activities = [
+        Activity(
+            id="timed",
+            name="Timed Ride",
+            activity_type="cycling",
+            start_time=datetime(2026, 2, 1, tzinfo=timezone.utc),
+            distance_m=20000,
+            elevation_gain_m=0,
+            moving_time_s=4000,
+            elapsed_time_s=4200,
+        ),
+        Activity(
+            id="untimed",
+            name="Imported activity without timing",
+            activity_type="cycling",
+            start_time=datetime(2026, 2, 2, tzinfo=timezone.utc),
+            distance_m=10000,
+            elevation_gain_m=0,
+            moving_time_s=None,
+            elapsed_time_s=None,
+        ),
+    ]
+
+    result = AnalyticsEngine().build_insights(
+        activities,
+        "cycling",
+        start_date=date(2026, 2, 1),
+        end_date=date(2026, 2, 2),
+    )
+
+    assert result.summary_metrics["averageSpeedMps"] == 5.0
+    assert result.summary_metrics["totalElevationGainM"] == 0.0
