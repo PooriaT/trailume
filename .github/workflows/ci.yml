@@ -54,7 +54,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: apps/api
-        run: poetry install --all-groups --no-interaction --no-root
+        run: poetry install --with dev --no-interaction --no-root
 
       - name: Run backend tests
         working-directory: apps/api

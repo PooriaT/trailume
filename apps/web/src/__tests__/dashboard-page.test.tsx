@@ -47,7 +47,7 @@ describe("DashboardPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
 
     await waitFor(() => {
-      expect(fetchActivities).toHaveBeenCalledWith({
+      expect(fetchActivities).toHaveBeenLastCalledWith({
         startDate: "2026-01-01",
         endDate: "2026-01-03",
         activityType: "running",

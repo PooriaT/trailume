@@ -55,7 +55,7 @@ packages/
 - Node.js 20+
 - pnpm 9+
 - Python 3.13
-- Poetry 2.0+ (required for `[dependency-groups]` in `apps/api/pyproject.toml`)
+- Poetry 2.0+
 - Optional: Ollama (for local LLM narrative generation)
 
 ### 1) Create env files
