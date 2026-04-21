@@ -55,7 +55,7 @@ packages/
 - Node.js 20+
 - pnpm 9+
 - Python 3.13
-- Poetry 1.8+
+- Poetry 2.0+ (required for `[dependency-groups]` in `apps/api/pyproject.toml`)
 - Optional: Ollama (for local LLM narrative generation)
 
 ### 1) Create env files
@@ -167,19 +167,28 @@ poetry run ruff format app tests
 
 Root scripts (`pnpm dev:api`, `pnpm test:api`, `pnpm lint:api`, `pnpm format:api`) now call these Poetry commands.
 
-## How to run tests
+## Testing
 
 From repo root:
 
 ```bash
-pnpm test:api
+pnpm test
 ```
 
-Or directly in backend:
+Run backend tests only:
 
 ```bash
-cd apps/api
-poetry run pytest
+pnpm test:api
+# or
+cd apps/api && poetry run pytest
+```
+
+Run frontend tests only:
+
+```bash
+pnpm test:web
+# or
+cd apps/web && pnpm test
 ```
 
 ## Current MVP scope
