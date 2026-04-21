@@ -1,197 +1,192 @@
-# Trailume MVP Monorepo
+# Trailume (MVP)
 
-Trailume is an MVP web app that connects to Strava, analyzes activities in a selected date range, and generates a narrative recap powered by deterministic insights plus a local LLM (Ollama).
+Trailume turns recent training activity into a polished recap page: metrics, highlight cards, trend charts, standout sessions, and narrative text.
 
-## Why this architecture
+This repo is intentionally practical: local-first, Strava-backed data ingestion, deterministic analytics, and optional local LLM narration via Ollama.
 
-This repository is intentionally split between a TypeScript frontend and Python backend to keep concerns clear:
+## Product overview
 
-- **Frontend (`apps/web`)** focuses on UX and visualization.
-- **Backend (`apps/api`)** owns provider integration, token handling, analytics, and narrative generation.
-- **Future extensibility** is supported through module boundaries (provider adapter, analytics engine, narrative client).
+Trailume helps athletes answer: **"How did this period of training go?"**
 
-### Tradeoffs
+Current MVP flow:
+1. Connect Strava via OAuth.
+2. Pick date range + activity type.
+3. Preview matching activities.
+4. Generate recap from deterministic analytics.
+5. Add narrative layer from Ollama when available (or deterministic fallback).
 
-- **MVP token storage:** Strava OAuth tokens are stored in a backend in-memory store keyed by an opaque HTTP-only session cookie. This is secure enough for local MVP iteration but is not durable across backend restarts.
-- **Synchronous generation:** recap generation is sync API for simplicity; later we can move to async jobs if latency grows.
-- **Ollama optionality:** if Ollama is unavailable, backend returns a deterministic fallback narrative.
+## Architecture summary
 
-## Monorepo structure
+Monorepo structure:
 
 ```text
-trailume/
-  apps/
-    web/                    # Next.js + TypeScript UI
-    api/                    # FastAPI backend
-  packages/
-    shared-schema/          # placeholder for generated API client/types
-  docs/
-    architecture.md
-  .env.example
-  .gitignore
-  pnpm-workspace.yaml
-  README.md
+apps/
+  api/   FastAPI backend (Strava integration, analytics, narrative providers)
+  web/   Next.js frontend (filters, recap rendering)
 ```
+
+### Backend boundaries
+
+- `services/strava`: provider integration (OAuth, token refresh, activity fetch/normalization).
+- `services/analytics`: deterministic metrics/insight computation.
+- `services/narrative`: narrative provider contract + Ollama provider + deterministic fallback.
+- `api/routes`: thin HTTP layer, auth/session checks, response contracts.
+
+### Frontend boundaries
+
+- `src/lib/api.ts`: centralized API access + uniform error parsing (`ApiError`).
+- `src/app/*`: page-level flows (`/`, `/dashboard`, `/recap`).
+- `src/components/*`: presentational recap sections.
+- `src/types/recap.ts`: contract-aligned response types.
 
 ## Local setup
 
-### 1) Prerequisites
+## 1) Prerequisites
 
 - Node.js 20+
 - pnpm 9+
 - Python 3.13+
-- (Optional but recommended) Ollama running locally
-- Default Ollama model for this scaffold: `gemma4` (override with `OLLAMA_MODEL`)
+- Optional: Ollama for local LLM narrative generation
 
-### 2) Configure environment
+## 2) Environment files
 
-Copy `.env.example` values into environment files:
+- Copy root `.env.example` values into:
+  - `apps/web/.env.local`
+  - `apps/api/.env`
 
-- `apps/web/.env.local`
-  - `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`
-- `apps/api/.env`
-  - `API_HOST=0.0.0.0`
-  - `API_PORT=8000`
-  - `APP_ENV=development`
-  - `WEB_APP_URL=http://localhost:3000`
-  - `STRAVA_CLIENT_ID=<from Strava app settings>`
-  - `STRAVA_CLIENT_SECRET=<from Strava app settings>`
-  - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
-  - `OLLAMA_BASE_URL=http://localhost:11434`
-  - `OLLAMA_MODEL=gemma4`
-  - `OLLAMA_TIMEOUT_SECONDS=45`
-  - `OLLAMA_TEMPERATURE=0.2`
-  - `OLLAMA_TOP_P=0.9`
-  - `OLLAMA_NUM_PREDICT=320`
-  - `SESSION_COOKIE_SECURE=false` (set to `true` in HTTPS deployments)
-  - `SESSION_COOKIE_SAMESITE=lax` (use `none` for cross-site frontend/API over HTTPS)
-
-### 3) Configure Strava developer app (exact values)
-
-1. Go to https://www.strava.com/settings/api and create an app.
-2. Set **Authorization Callback Domain** to `localhost` for local development.
-3. In your Trailume API env, set:
-   - `STRAVA_CLIENT_ID` to the app Client ID
-   - `STRAVA_CLIENT_SECRET` to the app Client Secret
-   - `STRAVA_REDIRECT_URI` to `http://localhost:8000/api/v1/auth/strava/callback`
-4. Ensure the frontend runs at `http://localhost:3000` and backend at `http://localhost:8000`.
-
-### 4) Run backend
+## 3) Install dependencies
 
 ```bash
+pnpm install
 cd apps/api
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5) Run frontend
+## 4) Run locally
+
+From repo root (in one terminal):
 
 ```bash
-cd apps/web
-pnpm install
 pnpm dev
 ```
 
-Frontend: http://localhost:3000  
-Backend docs: http://localhost:8000/docs
-
-
-### 6) Run Ollama locally (optional, recommended)
-
-Trailume can generate narratives with a local Ollama model, but it will **gracefully fall back** to a deterministic template generator when Ollama is unavailable.
+Or run separately:
 
 ```bash
-# Install and run Ollama (https://ollama.com/download)
-ollama serve
+pnpm dev:web
+pnpm dev:api
+```
 
-# In a separate terminal, pull the configured model
+URLs:
+- Web: `http://localhost:3000`
+- API docs: `http://localhost:8000/docs`
+
+## Environment variables
+
+### Frontend (`apps/web/.env.local`)
+
+- `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8000`)
+
+### Backend (`apps/api/.env`)
+
+Core:
+- `API_HOST`
+- `API_PORT`
+- `APP_ENV`
+- `WEB_APP_URL`
+
+Strava:
+- `STRAVA_CLIENT_ID`
+- `STRAVA_CLIENT_SECRET`
+- `STRAVA_REDIRECT_URI` (default `http://localhost:8000/api/v1/auth/strava/callback`)
+
+Ollama:
+- `OLLAMA_BASE_URL` (default `http://localhost:11434`)
+- `OLLAMA_MODEL` (default `gemma4`)
+- `OLLAMA_TIMEOUT_SECONDS`
+- `OLLAMA_TEMPERATURE`
+- `OLLAMA_TOP_P`
+- `OLLAMA_NUM_PREDICT`
+
+Session cookie behavior:
+- `SESSION_COOKIE_SECURE`
+- `SESSION_COOKIE_SAMESITE`
+
+## Strava setup
+
+1. Go to `https://www.strava.com/settings/api` and create an app.
+2. Set callback domain to `localhost` for local development.
+3. Set backend values:
+   - `STRAVA_CLIENT_ID`
+   - `STRAVA_CLIENT_SECRET`
+   - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
+4. Start app and click **Connect with Strava** from `/`.
+
+## Ollama setup
+
+Install and run Ollama (`https://ollama.com/download`):
+
+```bash
+ollama serve
 ollama pull gemma4
 ```
 
-If you use a different model, set `OLLAMA_MODEL=<model-name>` in `apps/api/.env`.
+If you use a different model, set `OLLAMA_MODEL` accordingly.
 
+Narrative behavior:
+- If Ollama is healthy and model is present: primary provider = Ollama.
+- Otherwise: fallback provider = deterministic narrative generator.
 
-## API flow (MVP)
+## Current MVP scope
 
-1. Frontend sends user to `GET /api/v1/auth/strava/login`.
-2. Backend creates OAuth state, stores pending session server-side, and redirects to Strava.
-3. Strava redirects to `GET /api/v1/auth/strava/callback`.
-4. Backend exchanges code for tokens, fetches athlete profile, stores tokens in server memory, and redirects user back to frontend.
-5. Frontend checks auth state via `GET /api/v1/auth/strava/status`.
-6. Frontend fetches normalized activities via `GET /api/v1/activities?start=...&end=...&type=...`.
-7. Recap generation still uses the deterministic/mock activity path for MVP continuity.
+Included:
+- Strava OAuth login/status/callback.
+- Strava activity retrieval within date range/type filters.
+- Deterministic analytics payload (metrics, highlights, trend series, insight flags, standout activities).
+- Narrative generation with clean provider boundary (`NarrativeProvider`).
+- Recap page with sectioned UI.
 
-## Current Strava endpoints
+Not included:
+- Durable token persistence (current store is in-memory).
+- Background jobs/async recap generation.
+- Full map geometry rendering (UI section exists, geometry payload not wired).
 
-- `GET /api/v1/auth/strava/login`
-- `GET /api/v1/auth/strava/callback`
-- `GET /api/v1/auth/strava/status`
-- `GET /api/v1/activities?start=<iso>&end=<iso>&type=<optional>`
+## Known limitations
 
+- In-memory token/session store resets when API restarts.
+- Strava API rate-limit strategy is minimal for MVP.
+- Narrative quality varies by local model quality/availability.
+- No user account system beyond Strava session cookie.
+- Single provider focus (Strava + Ollama) though interfaces are prepared for expansion.
 
-## Analytics recap payload notes
+## Scripts
 
-The recap API now returns a stable, typed payload with deterministic metrics and rule-based insight flags.
+From repo root:
 
-- **Deterministic only:** analytics are pure calculations over normalized activities; no LLM calls are used for metrics/highlights.
-- **Missing-data behavior:** moving time, elapsed time, and elevation are reported as `null` when unavailable instead of inferring synthetic values.
-- **Fastest effort metric:** fastest is selected by average moving speed (`distance / moving_time`) and requires at least 1 km to reduce noisy short-activity spikes.
-- **Consistency and trend heuristics:**
-  - Most consistent week = week with the highest number of active days (tie-breakers use activity count then date).
-  - Frequency trend = compares first-half vs second-half activity density and reports `increasing`, `decreasing`, or `flat`.
-- **Repeated-route tendency:** approximate signal based on normalized activity name repetition; emitted only when the same normalized name appears at least 3 times.
+- `pnpm dev` — run API + web concurrently
+- `pnpm dev:web` — web only
+- `pnpm dev:api` — API only
+- `pnpm lint` — lint web + API
+- `pnpm format` — format web + API
+- `pnpm test:api` — run backend tests
 
-These heuristics intentionally favor conservative, explainable outputs over aggressive interpretation so the downstream narrative layer can remain honest.
+## Roadmap
 
+### R1: richer storytelling surface
+- Richer map-based storytelling (route overlays, keyed moments, repeated-route visualization).
+- Better scene-level recap composition from analytics clusters.
 
-## Narrative generation behavior
+### R2: media output
+- Short video generation from recap scenes (script + auto-selected visuals/segments).
 
-- Recap analytics are computed first and remain deterministic.
-- The narrative layer consumes only structured recap analytics payload fields (`summaryMetrics`, `highlightCards`, `insightFlags`, `metadata`) and never raw activity streams.
-- Provider boundary:
-  - `OllamaNarrativeProvider` (primary local LLM provider)
-  - `DeterministicNarrativeProvider` (first-class fallback)
-- Fallback triggers automatically when:
-  - `OLLAMA_MODEL` is empty or not present in local Ollama tags
-  - Ollama is unreachable (`OLLAMA_BASE_URL`)
-  - generation/parsing fails
+### R3: comparative insight depth
+- Compare-period feature (e.g., "last 30 days vs prior 30 days").
 
-This keeps the app fully functional without cloud dependencies and without requiring Ollama uptime.
+### R4: provider expansion
+- Support for multiple activity data providers (while preserving normalized domain contracts).
+- Support for more activity-specific insight logic (running, cycling, swimming, then additional sports).
 
-## Tests
-
-From `apps/api`:
-
-```bash
-python -m pytest
-```
-
-## TODO roadmap
-
-### Strava integration
-- [x] Implement OAuth code exchange and token refresh handling.
-- [x] Normalize Strava activity data into internal domain model.
-- [ ] Replace in-memory token storage with persistent encrypted storage.
-- [ ] Add Strava rate-limit aware retry/backoff strategy.
-
-### Analytics
-- [ ] Add activity-type-specific insight strategies (cycling, running, swimming).
-- [x] Add trend metrics (weekly consistency and frequency deltas).
-- [ ] Add stronger standout ranking heuristics.
-
-### Narrative
-- [ ] Add prompt versioning and schema-constrained generation.
-- [ ] Add narrative quality checks and regeneration endpoint.
-- [ ] Add cloud LLM adapter while keeping the same interface.
-
-### Frontend UX
-- [ ] Add richer chart interactions and mobile polish.
-- [ ] Add map route overlays with selectable standout activities.
-- [ ] Add authenticated user session handling.
-
-### Platform
-- [ ] Add Docker Compose for one-command startup.
-- [ ] Add CI lint/test workflows.
-- [ ] Add persistence via SQLModel + Alembic migrations.
+### R5: LLM deployment evolution
+- Migration path from local Ollama to cloud-hosted LLM providers behind the same narrative provider interface.

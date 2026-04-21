@@ -103,14 +103,13 @@ class InsightFlags(BaseModel):
     repeated_route_name: str | None = Field(default=None, alias="repeatedRouteName")
 
 
-
-
 class NarrativeBlock(BaseModel):
     title: str
     summary: str
     highlights: list[str] = Field(min_length=3, max_length=5)
     reflection: str
     source: Literal["ollama", "fallback"]
+
 
 class RecapGenerateResponse(BaseModel):
     title: str

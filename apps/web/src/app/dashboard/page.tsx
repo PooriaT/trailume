@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { fetchActivities, getStravaAuthStatus } from "@/lib/api";
+import { ApiError, fetchActivities, getStravaAuthStatus } from "@/lib/api";
 import { ActivityType, RecapFormValues } from "@/types/recap";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -89,7 +89,13 @@ export default function DashboardPage() {
         <div className="section-heading-row">
           <h2>Activity preview</h2>
         </div>
-        {activitiesMutation.isError ? <p className="error-text">Unable to fetch activities for these filters.</p> : null}
+        {activitiesMutation.isError ? (
+          <p className="error-text">
+            {activitiesMutation.error instanceof ApiError
+              ? activitiesMutation.error.message
+              : "Unable to fetch activities for these filters."}
+          </p>
+        ) : null}
         {activitiesMutation.data?.empty ? (
           <p className="muted">{activitiesMutation.data.message ?? "No activities match this date range or type."}</p>
         ) : null}

@@ -2,18 +2,53 @@ import { RecapFormValues, RecapResponse, StravaActivitiesResponse, StravaAuthSta
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly detail?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export function getStravaLoginUrl() {
   return `${API_BASE_URL}/api/v1/auth/strava/login`;
 }
 
-export async function getStravaAuthStatus() {
-  const res = await fetch(`${API_BASE_URL}/api/v1/auth/strava/status`, {
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new Error("Failed to read Strava auth state.");
+async function parseErrorResponse(res: Response, fallbackMessage: string): Promise<ApiError> {
+  let detail: string | undefined;
+
+  try {
+    const payload = (await res.json()) as { detail?: string };
+    detail = payload?.detail;
+  } catch {
+    try {
+      const text = await res.text();
+      detail = text || undefined;
+    } catch {
+      detail = undefined;
+    }
   }
-  return (await res.json()) as StravaAuthStatus;
+
+  return new ApiError(detail ?? fallbackMessage, res.status, detail);
+}
+
+async function apiFetch<T>(input: string, init: RequestInit, fallbackMessage: string): Promise<T> {
+  const response = await fetch(input, init);
+  if (!response.ok) {
+    throw await parseErrorResponse(response, fallbackMessage);
+  }
+  return (await response.json()) as T;
+}
+
+export async function getStravaAuthStatus() {
+  return apiFetch<StravaAuthStatus>(
+    `${API_BASE_URL}/api/v1/auth/strava/status`,
+    { credentials: "include" },
+    "Failed to read Strava auth state.",
+  );
 }
 
 export async function fetchActivities(payload: RecapFormValues) {
@@ -23,24 +58,22 @@ export async function fetchActivities(payload: RecapFormValues) {
     type: payload.activityType,
   });
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/activities?${params.toString()}`, {
-    credentials: "include",
-  });
-  if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || "Failed to fetch activities.");
-  }
-  return (await res.json()) as StravaActivitiesResponse;
+  return apiFetch<StravaActivitiesResponse>(
+    `${API_BASE_URL}/api/v1/activities?${params.toString()}`,
+    { credentials: "include" },
+    "Failed to fetch activities.",
+  );
 }
 
 export async function generateRecap(payload: RecapFormValues) {
-  const res = await fetch(`${API_BASE_URL}/api/v1/recaps/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error("Failed to generate recap.");
-  }
-  return (await res.json()) as RecapResponse;
+  return apiFetch<RecapResponse>(
+    `${API_BASE_URL}/api/v1/recaps/generate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    },
+    "Failed to generate recap.",
+  );
 }

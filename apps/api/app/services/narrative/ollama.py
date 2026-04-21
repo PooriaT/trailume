@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.core.config import settings
 from app.services.narrative.models import NarrativeInput, NarrativeOutput
+
+
+class OllamaProviderError(Exception):
+    pass
 
 
 class _OllamaNarrativeShape(BaseModel):
@@ -27,35 +32,44 @@ class OllamaNarrativeProvider:
                 response = client.get(f"{settings.ollama_base_url}/api/tags")
                 response.raise_for_status()
                 tags = response.json().get("models", [])
-                return any(model.get("name", "").startswith(settings.ollama_model) for model in tags)
+                return any(
+                    model.get("name", "").startswith(settings.ollama_model) for model in tags
+                )
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
             return False
 
     def generate(self, payload: NarrativeInput) -> NarrativeOutput:
         prompt = self._build_prompt(payload)
-        with httpx.Client(timeout=settings.ollama_timeout_seconds) as client:
-            response = client.post(
-                f"{settings.ollama_base_url}/api/generate",
-                json={
-                    "model": settings.ollama_model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": settings.ollama_temperature,
-                        "top_p": settings.ollama_top_p,
-                        "num_predict": settings.ollama_num_predict,
+        try:
+            with httpx.Client(timeout=settings.ollama_timeout_seconds) as client:
+                response = client.post(
+                    f"{settings.ollama_base_url}/api/generate",
+                    json={
+                        "model": settings.ollama_model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": settings.ollama_temperature,
+                            "top_p": settings.ollama_top_p,
+                            "num_predict": settings.ollama_num_predict,
+                        },
                     },
-                },
-            )
-            response.raise_for_status()
-            data = response.json()
+                )
+                response.raise_for_status()
+                data = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise OllamaProviderError("Failed to call Ollama generate endpoint") from exc
 
-        raw_text = data.get("response", "")
-        parsed = _OllamaNarrativeShape.model_validate(json.loads(raw_text))
+        try:
+            raw_text = data.get("response", "")
+            parsed_json = json.loads(raw_text)
+            parsed = _OllamaNarrativeShape.model_validate(parsed_json)
+            cleaned_highlights = [item.strip() for item in parsed.highlights if item.strip()]
+        except (JSONDecodeError, ValidationError, TypeError) as exc:
+            raise OllamaProviderError("Invalid narrative response shape from Ollama") from exc
 
-        cleaned_highlights = [item.strip() for item in parsed.highlights if item.strip()]
         if not 3 <= len(cleaned_highlights) <= 5:
-            raise ValueError("Ollama response must contain 3-5 non-empty highlights")
+            raise OllamaProviderError("Ollama response must contain 3-5 non-empty highlights")
 
         return NarrativeOutput(
             title=parsed.title.strip() or payload.recap_title,

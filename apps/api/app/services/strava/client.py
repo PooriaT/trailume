@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import httpx
 
@@ -115,7 +115,9 @@ class StravaService:
                     timeout=20,
                 )
                 response.raise_for_status()
-                raw_batch = [StravaActivityResponse.model_validate(item) for item in response.json()]
+                raw_batch = [
+                    StravaActivityResponse.model_validate(item) for item in response.json()
+                ]
             except httpx.HTTPStatusError as exc:
                 raise StravaAPIError(f"Failed to fetch activities: {exc.response.text}") from exc
             except (httpx.HTTPError, ValueError) as exc:
@@ -135,48 +137,7 @@ class StravaService:
 
         return activities
 
-
     def _to_unix_utc(self, value: datetime) -> int:
         if value.tzinfo is None:
             return int(value.replace(tzinfo=timezone.utc).timestamp())
         return int(value.astimezone(timezone.utc).timestamp())
-
-    def fetch_mock_activities(self, start_date: datetime, end_date: datetime, activity_type: str) -> list[Activity]:
-        sample = [
-            Activity(
-                id="a1",
-                name="Hill Climb Session",
-                activity_type="cycling",
-                start_time=datetime.now(timezone.utc) - timedelta(days=5),
-                distance_m=42000,
-                elevation_gain_m=680,
-                moving_time_s=6100,
-                elapsed_time_s=6600,
-            ),
-            Activity(
-                id="a2",
-                name="Endurance Ride",
-                activity_type="cycling",
-                start_time=datetime.now(timezone.utc) - timedelta(days=3),
-                distance_m=73500,
-                elevation_gain_m=540,
-                moving_time_s=9800,
-                elapsed_time_s=10400,
-            ),
-            Activity(
-                id="a3",
-                name="Recovery Spin",
-                activity_type="cycling",
-                start_time=datetime.now(timezone.utc) - timedelta(days=1),
-                distance_m=21000,
-                elevation_gain_m=170,
-                moving_time_s=3400,
-                elapsed_time_s=3700,
-            ),
-        ]
-        return [
-            activity
-            for activity in sample
-            if start_date.date() <= activity.start_time.date() <= end_date.date()
-            and (activity_type == "all" or activity.activity_type == activity_type)
-        ]
