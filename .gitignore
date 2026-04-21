@@ -1,17 +1,18 @@
-# OS
+# OS junk
 .DS_Store
 Thumbs.db
 
-# IDE / Editor
+# IDE / editor
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Env
+# Environment and local config
 .env
 .env.*
 !.env.example
+.envrc
 
 # Logs
 *.log
@@ -20,41 +21,49 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Node / Next
+# Node / pnpm / Next.js
 node_modules/
 .pnpm-store/
 .next/
 out/
 dist/
-coverage/
 *.tsbuildinfo
 
-# Python
+# Python bytecode and caches
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .hypothesis/
+
+# Python virtual environments
 .venv/
 venv/
-.envrc
+ENV/
 
-# Python packaging / local installs
+# Poetry
+poetry.toml
+
+# Python packaging/build artifacts
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
+build/
 
-# Build / caches
+# Coverage and test outputs
+.coverage
+.coverage.*
+coverage/
+coverage.xml
+htmlcov/
+
+# Generic caches/temp
 .cache/
 .tmp/
 .tmp*/
 
-# Test artifacts
-htmlcov/
-coverage.xml
-
-# Local DB / runtime artifacts
+# Local DB/runtime artifacts
 *.sqlite
 *.sqlite3
 *.db

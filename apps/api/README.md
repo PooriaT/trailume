@@ -4,12 +4,12 @@ FastAPI backend for Trailume MVP.
 
 ## Narrative providers
 
-Trailume supports a provider boundary for recap storytelling:
+Trailume uses a provider boundary for recap narrative generation:
 
 - `OllamaNarrativeProvider` (primary)
 - `DeterministicNarrativeProvider` (fallback)
 
-If Ollama is unavailable, the fallback provider is used automatically so recap generation still succeeds.
+If Ollama is unavailable or returns invalid output, fallback generation is used so recap requests still succeed.
 
 ## Required environment variables
 
@@ -27,13 +27,31 @@ If Ollama is unavailable, the fallback provider is used automatically so recap g
 - `OLLAMA_TOP_P` (default: `0.9`)
 - `OLLAMA_NUM_PREDICT` (default: `320`)
 
-## Run
+## Poetry workflow
+
+Install dependencies:
 
 ```bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+poetry install
+```
+
+Run API:
+
+```bash
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Run tests:
+
+```bash
+poetry run pytest
+```
+
+Run lint/format:
+
+```bash
+poetry run ruff check app tests
+poetry run ruff format app tests
 ```
 
 ## Run Ollama locally
@@ -41,11 +59,4 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 ollama serve
 ollama pull gemma4
-```
-
-## Test
-
-```bash
-source .venv/bin/activate
-pytest
 ```

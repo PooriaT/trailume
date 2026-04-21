@@ -1,32 +1,158 @@
-# Trailume Architecture (MVP)
+# Trailume Architecture (Current MVP)
 
-## System shape
+This document describes the **actual** architecture and boundaries implemented in the repository.
 
-- **Web (`apps/web`)**: Next.js UI for auth, filtering, preview, and recap presentation.
-- **API (`apps/api`)**: FastAPI service for provider integration, deterministic analytics, and narrative generation.
+## 1) System overview
 
-## Core backend flows
+Trailume runs as two local services in a monorepo:
 
-1. Strava OAuth (`/auth/strava/login` -> callback -> session cookie).
-2. Session-backed activity fetch (`/activities`).
-3. Recap generation (`/recaps/generate`):
-   - Validate/authenticate session.
-   - Fetch normalized activities from Strava.
-   - Build deterministic `InsightBundle`.
-   - Generate narrative using provider boundary:
-     - Primary: Ollama provider
-     - Fallback: deterministic provider
+- **Frontend (`apps/web`)**: Next.js app that drives user flow and recap rendering.
+- **Backend (`apps/api`)**: FastAPI app that handles Strava auth/data access, analytics, and narrative generation.
 
-## Module boundaries
+The frontend is intentionally thin; core business logic lives in the backend.
 
-- `services/strava`: external provider access + token lifecycle.
-- `services/analytics`: deterministic computation only; no provider/network dependencies.
-- `services/narrative`: provider interface and implementations; consumes analytics output only.
-- `api/routes`: HTTP input/output contracts and error/status mapping.
+---
 
-## Design principles
+## 2) Frontend responsibilities (`apps/web`)
 
-- Keep MVP behavior deterministic-first.
-- Keep provider seams explicit for future expansion.
-- Keep route handlers thin and predictable.
-- Fail gracefully at provider edges and preserve usable UI states.
+The frontend is responsible for:
+
+- Starting and completing the Strava auth UX.
+- Collecting recap inputs (date range + activity type).
+- Calling backend APIs for activities and recap generation.
+- Rendering recap sections (hero, metrics, trend charts, highlight cards, standout activities, narrative, flags).
+- Handling API errors consistently through a centralized API client.
+
+The frontend is **not** responsible for:
+
+- Computing analytics.
+- Generating narrative content.
+- Calling Strava directly.
+
+Those concerns stay in the backend.
+
+---
+
+## 3) Backend responsibilities (`apps/api`)
+
+The backend owns all domain logic and provider integrations:
+
+- Session handling around Strava OAuth.
+- Strava token lifecycle management + activity retrieval.
+- Deterministic analytics and insight computation.
+- Narrative generation with provider orchestration and fallback.
+- API contracts for frontend consumption.
+
+Route handlers are intentionally thin adapters over services.
+
+---
+
+## 4) Strava integration boundary
+
+Boundary location: `app/services/strava/*`
+
+Responsibilities inside this boundary:
+
+- Build Strava authorize URL.
+- Exchange auth code for tokens.
+- Refresh access tokens when needed.
+- Fetch athlete activities from Strava.
+- Normalize Strava activity payloads into Trailume domain models.
+
+Everything outside this boundary should consume normalized models and remain provider-agnostic.
+
+Current MVP storage note:
+- Token/session state is currently in-memory (`token_store`), not durable.
+
+---
+
+## 5) Analytics / insight engine boundary
+
+Boundary location: `app/services/analytics/engine.py`
+
+Responsibilities:
+
+- Deterministically compute recap insights from normalized activities.
+- Produce summary metrics, key metrics, highlights, trend series, standout activities, and metadata.
+- Return stable output even when activity lists are empty.
+
+Non-responsibilities:
+
+- External HTTP/provider calls.
+- Narrative prose generation.
+
+The analytics engine is designed to be pure and testable.
+
+---
+
+## 6) Narrative generation boundary
+
+Boundary location: `app/services/narrative/*`
+
+Responsibilities:
+
+- Define a `NarrativeProvider` contract.
+- Implement providers:
+  - `OllamaNarrativeProvider` (primary).
+  - `DeterministicNarrativeProvider` (fallback).
+- Orchestrate provider choice in `NarrativeService`.
+
+Behavior:
+
+1. Check primary provider availability.
+2. Attempt generation with primary provider.
+3. Validate shape constraints (3–5 highlights).
+4. On failure/unavailability, fallback to deterministic provider.
+
+This keeps recap generation functional when local LLMs are unavailable.
+
+---
+
+## 7) Ollama provider boundary + fallback behavior
+
+Boundary location: `app/services/narrative/ollama.py`
+
+Ollama provider responsibilities:
+
+- Health/model availability check through Ollama tags endpoint.
+- Prompt construction from analytics evidence only.
+- Generate request to Ollama `/api/generate`.
+- Parse and validate strict JSON narrative shape.
+
+Fallback behavior is enforced by `NarrativeService`:
+
+- Any Ollama unavailability, transport error, parse error, or invalid output shape triggers deterministic fallback.
+- API responses still return a narrative object with a `source` field indicating provider origin.
+
+---
+
+## 8) API contract and schema strategy
+
+Current strategy:
+
+- Backend Pydantic models in `app/models/contracts.py` define request/response contracts.
+- Frontend TypeScript types in `apps/web/src/types/recap.ts` mirror backend response shapes.
+- Frontend API access is centralized in `apps/web/src/lib/api.ts`.
+
+There is also `packages/shared-schema/` in the repo, but MVP contract sharing is currently not generated from a single canonical schema package yet.
+
+Contributor guidance:
+
+- Treat backend contracts as source of truth.
+- Update frontend types and rendering code in the same change when contract fields change.
+- Keep route-level response mapping explicit and test-covered.
+
+---
+
+## 9) Request lifecycle (recap generation)
+
+`POST /api/v1/recaps/generate` high-level flow:
+
+1. Validate request payload and authenticated session.
+2. Refresh Strava tokens if needed.
+3. Fetch and normalize activities.
+4. Compute deterministic insight bundle.
+5. Generate narrative via provider service (Ollama primary, deterministic fallback).
+6. Return a single recap payload consumed directly by frontend sections.
+
+This preserves a clear separation between provider IO, deterministic computation, and presentation.
