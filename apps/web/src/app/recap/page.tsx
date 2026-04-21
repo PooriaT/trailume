@@ -1,16 +1,48 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { generateRecap } from "@/lib/api";
-import { DistanceChart } from "@/components/distance-chart";
-import { MetricCards } from "@/components/metric-cards";
-import { RouteMapPlaceholder } from "@/components/route-map-placeholder";
-import { StandoutCards } from "@/components/standout-cards";
-import { HighlightCards } from "@/components/highlight-cards";
-import { InsightFlagsPanel } from "@/components/insight-flags";
+import { HeroRecapSection } from "@/components/hero-recap-section";
+import { StatCardsSection } from "@/components/stat-cards-section";
+import { HighlightCardsSection } from "@/components/highlight-cards-section";
+import { StandoutActivityCardsSection } from "@/components/standout-activity-cards-section";
+import { TrendChartSection } from "@/components/trend-chart-section";
+import { NarrativeTextSection } from "@/components/narrative-text-section";
+import { MapSection } from "@/components/map-section";
 import { RecapFormValues } from "@/types/recap";
+
+function RecapLoadingState() {
+  return (
+    <main className="page-shell recap-layout">
+      <section className="panel loading-panel">
+        <h1>Building your recap</h1>
+        <p>Pulling your activities, shaping insights, and drafting your story.</p>
+      </section>
+      <div className="skeleton-grid">
+        <div className="skeleton-card" />
+        <div className="skeleton-card" />
+        <div className="skeleton-card" />
+      </div>
+    </main>
+  );
+}
+
+function RecapErrorState() {
+  return (
+    <main className="page-shell">
+      <section className="panel error-panel">
+        <h1>Couldn’t generate this recap</h1>
+        <p>Try refreshing, adjusting the date range, or checking Strava connection status.</p>
+        <Link className="btn btn-primary" href="/dashboard">
+          Back to filters
+        </Link>
+      </section>
+    </main>
+  );
+}
 
 export default function RecapPage() {
   const searchParams = useSearchParams();
@@ -29,38 +61,24 @@ export default function RecapPage() {
   });
 
   if (recapQuery.isLoading) {
-    return <main className="container"><p>Generating your recap...</p></main>;
+    return <RecapLoadingState />;
   }
 
   if (recapQuery.isError || !recapQuery.data) {
-    return <main className="container"><p>Unable to generate recap right now.</p></main>;
+    return <RecapErrorState />;
   }
 
   const recap = recapQuery.data;
 
   return (
-    <main className="container grid">
-      <section className="card">
-        <h1>{recap.narrative.title}</h1>
-        <p>{recap.narrative.summary}</p>
-        <ul>
-          {recap.narrative.highlights.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        <p>{recap.narrative.reflection}</p>
-        <p><strong>Narrative provider:</strong> {recap.narrative.source}</p>
-        <p>
-          <strong>Filters:</strong> {recap.metadata.startDate} to {recap.metadata.endDate} · {recap.metadata.selectedActivityType}
-        </p>
-      </section>
-
-      <MetricCards metrics={recap.keyMetrics} />
-      <HighlightCards cards={recap.highlightCards} />
-      <DistanceChart points={recap.chartPoints} />
-      <StandoutCards activities={recap.standoutActivities} />
-      <InsightFlagsPanel flags={recap.insightFlags} />
-      <RouteMapPlaceholder />
+    <main className="page-shell recap-layout">
+      <HeroRecapSection narrative={recap.narrative} metadata={recap.metadata} />
+      <StatCardsSection metrics={recap.keyMetrics} />
+      <HighlightCardsSection cards={recap.highlightCards} />
+      <TrendChartSection points={recap.chartPoints} />
+      <StandoutActivityCardsSection activities={recap.standoutActivities} />
+      <NarrativeTextSection narrative={recap.narrative} />
+      <MapSection recap={recap} />
     </main>
   );
 }
