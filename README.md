@@ -169,7 +169,7 @@ From repo root:
 - `pnpm dev:web` — web only
 - `pnpm dev:api` — API only
 - `pnpm lint` — lint web + API
-- `pnpm format` — format web + API
+- `pnpm format` — format API
 - `pnpm test:api` — run backend tests
 
 ## Roadmap
