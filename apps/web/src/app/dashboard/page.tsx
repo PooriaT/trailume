@@ -4,13 +4,19 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { fetchActivities, getStravaAuthStatus } from "@/lib/api";
-import { RecapFormValues } from "@/types/recap";
+import { ActivityType, RecapFormValues } from "@/types/recap";
 
 const today = new Date().toISOString().slice(0, 10);
+const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
+  { value: "all", label: "All activities" },
+  { value: "cycling", label: "Cycling" },
+  { value: "running", label: "Running" },
+  { value: "swimming", label: "Swimming" },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { register, handleSubmit, watch } = useForm<RecapFormValues>({
+  const { register, handleSubmit } = useForm<RecapFormValues>({
     defaultValues: {
       startDate: today,
       endDate: today,
@@ -20,15 +26,21 @@ export default function DashboardPage() {
 
   const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
   const activitiesMutation = useMutation({ mutationFn: fetchActivities });
-  const selectedType = watch("activityType");
 
   return (
-    <main className="container grid">
-      <section className="card">
-        <h1>Recap Filters</h1>
-        <p>Auth status: {statusQuery.data?.connected ? "Connected" : "Not connected"}</p>
+    <main className="page-shell dashboard-layout">
+      <section className="panel">
+        <div className="section-heading-row">
+          <h1>Build your recap</h1>
+        </div>
+        <p className="muted">
+          {statusQuery.data?.connected
+            ? `Connected as ${statusQuery.data.athleteName ?? "your account"}.`
+            : "Connect Strava on the home page before generating a recap."}
+        </p>
+
         <form
-          className="grid"
+          className="filters-grid"
           onSubmit={handleSubmit(async (values) => {
             await activitiesMutation.mutateAsync(values);
           })}
@@ -46,45 +58,56 @@ export default function DashboardPage() {
           <label>
             Activity type
             <select {...register("activityType")}>
-              <option value="all">All</option>
-              <option value="cycling">Cycling</option>
-              <option value="running">Running</option>
-              <option value="swimming">Swimming</option>
+              {ACTIVITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
 
-          <button type="submit" disabled={activitiesMutation.isPending}>
-            {activitiesMutation.isPending ? "Loading activities..." : "Fetch activities"}
-          </button>
+          <div className="cta-row">
+            <button className="btn btn-ghost" type="submit" disabled={activitiesMutation.isPending}>
+              {activitiesMutation.isPending ? "Loading preview..." : "Preview activities"}
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSubmit((values) => {
-              const params = new URLSearchParams(values as Record<string, string>);
-              router.push(`/recap?${params.toString()}`);
-            })}
-          >
-            Generate recap
-          </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={handleSubmit((values) => {
+                const params = new URLSearchParams(values as Record<string, string>);
+                router.push(`/recap?${params.toString()}`);
+              })}
+            >
+              Generate recap
+            </button>
+          </div>
         </form>
       </section>
 
-      <section className="card">
-        <h2>Activities preview</h2>
-        {activitiesMutation.isError ? <p>Unable to fetch activities for the selected filters.</p> : null}
+      <section className="panel">
+        <div className="section-heading-row">
+          <h2>Activity preview</h2>
+        </div>
+        {activitiesMutation.isError ? <p className="error-text">Unable to fetch activities for these filters.</p> : null}
         {activitiesMutation.data?.empty ? (
-          <p>{activitiesMutation.data.message ?? "No activities match this date range or type."}</p>
+          <p className="muted">{activitiesMutation.data.message ?? "No activities match this date range or type."}</p>
         ) : null}
         {activitiesMutation.data?.activities?.length ? (
-          <ul>
+          <ul className="activity-list">
             {activitiesMutation.data.activities.map((activity) => (
               <li key={activity.id}>
-                {activity.name} · {activity.activityType} · {(activity.distanceM / 1000).toFixed(1)} km
+                <span>{activity.name}</span>
+                <span>
+                  {activity.activityType} • {(activity.distanceM / 1000).toFixed(1)} km
+                </span>
               </li>
             ))}
           </ul>
         ) : null}
-        {!activitiesMutation.data && selectedType ? <p>Submit filters to load activities.</p> : null}
+        {!activitiesMutation.data && !activitiesMutation.isError ? (
+          <p className="muted">Set filters and preview activities before generating your recap.</p>
+        ) : null}
       </section>
     </main>
   );

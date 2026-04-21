@@ -8,36 +8,49 @@ export default function HomePage() {
   const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
 
   return (
-    <main className="container grid">
-      <section className="card">
-        <h1>Trailume</h1>
-        <p>
-          Generate a compelling activity recap from Strava with deterministic insights and a local narrative model.
+    <main className="page-shell landing-layout">
+      <section className="landing-hero panel">
+        <p className="eyebrow">Trailume MVP</p>
+        <h1>Turn your training into a story worth sharing.</h1>
+        <p className="hero-summary">
+          Connect Strava, choose a date range, and generate a polished recap with insights and narrative context.
         </p>
-        <button
-          onClick={() => {
-            window.location.href = getStravaLoginUrl();
-          }}
-        >
-          Connect with Strava
-        </button>
 
-        {statusQuery.data?.connected ? (
-          <p>✅ Connected to Strava as {statusQuery.data.athleteName ?? "your account"}.</p>
-        ) : (
-          <p>Not connected yet.</p>
-        )}
-        {statusQuery.isError ? <p>Unable to load auth status. Check backend config.</p> : null}
+        <div className="cta-row">
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              window.location.href = getStravaLoginUrl();
+            }}
+          >
+            Connect with Strava
+          </button>
+          <Link className="btn btn-ghost" href="/dashboard">
+            Open recap builder
+          </Link>
+        </div>
+
+        <p className="muted">
+          {statusQuery.data?.connected
+            ? `Connected as ${statusQuery.data.athleteName ?? "your account"}.`
+            : "Not connected yet."}
+        </p>
+        {statusQuery.isError ? <p className="error-text">Unable to load auth status right now.</p> : null}
       </section>
 
-      <section className="card">
-        <h2>MVP flow</h2>
-        <ol>
-          <li>Connect Strava</li>
-          <li>Pick date range and activity type</li>
-          <li>Fetch activities and generate recap story</li>
-        </ol>
-        <Link href="/dashboard">Go to dashboard</Link>
+      <section className="panel feature-grid">
+        <article>
+          <h3>1. Connect</h3>
+          <p>Secure Strava OAuth for activity data.</p>
+        </article>
+        <article>
+          <h3>2. Filter</h3>
+          <p>Focus on timeframe and sport type.</p>
+        </article>
+        <article>
+          <h3>3. Share</h3>
+          <p>Get a premium recap page built for screenshots.</p>
+        </article>
       </section>
     </main>
   );
