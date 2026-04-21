@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify frontend lockfile exists
+        run: test -f pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend tests
+        run: pnpm test:web
+        env:
+          CI: true
+
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.4
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Verify backend lockfile exists
+        run: test -f apps/api/poetry.lock
+
+      - name: Install backend dependencies
+        working-directory: apps/api
+        run: poetry install --with dev --no-interaction --no-root --sync
+
+      - name: Run backend tests
+        working-directory: apps/api
+        run: poetry run pytest
+        env:
+          APP_ENV: test
+          STRAVA_CLIENT_ID: ci-dummy-client-id
+          STRAVA_CLIENT_SECRET: ci-dummy-client-secret
+          STRAVA_REDIRECT_URI: http://localhost:8000/api/v1/auth/strava/callback
+          OLLAMA_BASE_URL: http://localhost:11434
+          OLLAMA_MODEL: gemma4

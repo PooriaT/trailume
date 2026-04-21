@@ -191,6 +191,20 @@ pnpm test:web
 cd apps/web && pnpm test
 ```
 
+## Continuous Integration
+
+GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs on:
+- every pull request
+- pushes to `main`
+
+CI validates:
+- frontend dependency install + frontend test suite (`pnpm test:web`)
+- backend dependency install + backend test suite (`poetry run pytest`)
+
+CI assumptions:
+- lockfiles are committed (`pnpm-lock.yaml` and `apps/api/poetry.lock`) so installs stay reproducible
+- backend tests run with safe dummy Strava/Ollama env values; CI does **not** require live Strava or Ollama services
+
 ## Current MVP scope
 
 Included:
