@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from statistics import mean
 
 from app.models.domain import Activity, InsightBundle, WeekAggregate

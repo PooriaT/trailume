@@ -27,8 +27,11 @@ def test_recap_endpoint_returns_contract_shape() -> None:
 
     body = response.json()
     assert "title" in body
-    assert "narrativeSummary" in body
-    assert "narrativeSource" in body
+    assert "narrative" in body
+    assert "summary" in body["narrative"]
+    assert "highlights" in body["narrative"]
+    assert "reflection" in body["narrative"]
+    assert "source" in body["narrative"]
     assert "summaryMetrics" in body
     assert "keyMetrics" in body
     assert "highlightCards" in body
