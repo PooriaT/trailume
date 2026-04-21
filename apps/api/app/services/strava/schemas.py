@@ -31,7 +31,9 @@ class StravaActivityResponse(BaseModel):
     type: str
     start_date: datetime
     distance: float
-    total_elevation_gain: float
+    moving_time: int | None = None
+    elapsed_time: int | None = None
+    total_elevation_gain: float | None = None
 
 
 class ActivityItem(BaseModel):
@@ -58,7 +60,9 @@ def normalize_activity(raw: StravaActivityResponse) -> Activity:
         activity_type=mapped_type,
         start_time=raw.start_date,
         distance_m=raw.distance,
-        elevation_gain_m=raw.total_elevation_gain,
+        elevation_gain_m=raw.total_elevation_gain or 0.0,
+        moving_time_s=raw.moving_time,
+        elapsed_time_s=raw.elapsed_time,
     )
 
 

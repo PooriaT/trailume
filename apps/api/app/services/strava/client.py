@@ -99,8 +99,8 @@ class StravaService:
         activity_type: str | None = None,
     ) -> list[Activity]:
         params = {
-            "after": int(start_date.replace(tzinfo=timezone.utc).timestamp()),
-            "before": int(end_date.replace(tzinfo=timezone.utc).timestamp()),
+            "after": self._to_unix_utc(start_date),
+            "before": self._to_unix_utc(end_date),
             "page": 1,
             "per_page": 100,
         }
@@ -135,6 +135,12 @@ class StravaService:
 
         return activities
 
+
+    def _to_unix_utc(self, value: datetime) -> int:
+        if value.tzinfo is None:
+            return int(value.replace(tzinfo=timezone.utc).timestamp())
+        return int(value.astimezone(timezone.utc).timestamp())
+
     def fetch_mock_activities(self, start_date: datetime, end_date: datetime, activity_type: str) -> list[Activity]:
         sample = [
             Activity(
@@ -144,6 +150,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=5),
                 distance_m=42000,
                 elevation_gain_m=680,
+                moving_time_s=6100,
+                elapsed_time_s=6600,
             ),
             Activity(
                 id="a2",
@@ -152,6 +160,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=3),
                 distance_m=73500,
                 elevation_gain_m=540,
+                moving_time_s=9800,
+                elapsed_time_s=10400,
             ),
             Activity(
                 id="a3",
@@ -160,6 +170,8 @@ class StravaService:
                 start_time=datetime.now(timezone.utc) - timedelta(days=1),
                 distance_m=21000,
                 elevation_gain_m=170,
+                moving_time_s=3400,
+                elapsed_time_s=3700,
             ),
         ]
         return [

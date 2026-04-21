@@ -8,6 +8,8 @@ import { DistanceChart } from "@/components/distance-chart";
 import { MetricCards } from "@/components/metric-cards";
 import { RouteMapPlaceholder } from "@/components/route-map-placeholder";
 import { StandoutCards } from "@/components/standout-cards";
+import { HighlightCards } from "@/components/highlight-cards";
+import { InsightFlagsPanel } from "@/components/insight-flags";
 import { RecapFormValues } from "@/types/recap";
 
 export default function RecapPage() {
@@ -42,11 +44,16 @@ export default function RecapPage() {
         <h1>{recap.title}</h1>
         <p>{recap.narrativeSummary}</p>
         <p><strong>Narrative source:</strong> {recap.narrativeSource}</p>
+        <p>
+          <strong>Filters:</strong> {recap.metadata.startDate} to {recap.metadata.endDate} · {recap.metadata.selectedActivityType}
+        </p>
       </section>
 
       <MetricCards metrics={recap.keyMetrics} />
+      <HighlightCards cards={recap.highlightCards} />
       <DistanceChart points={recap.chartPoints} />
       <StandoutCards activities={recap.standoutActivities} />
+      <InsightFlagsPanel flags={recap.insightFlags} />
       <RouteMapPlaceholder />
     </main>
   );

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +18,9 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "gemma4"
     ollama_timeout_seconds: int = 45
+
+    session_cookie_secure: bool = False
+    session_cookie_samesite: Literal["lax", "none", "strict"] = "lax"
 
 
 settings = Settings()
