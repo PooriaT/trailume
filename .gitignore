@@ -16,7 +16,6 @@ Thumbs.db
 
 # Logs
 *.log
-npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
@@ -68,6 +67,5 @@ htmlcov/
 *.sqlite3
 *.db
 
-# Lock files
-package-lock.json
+# Backend lock files
 apps/api/poetry.lock

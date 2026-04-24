@@ -79,7 +79,11 @@ export default function DashboardPage() {
               className="btn btn-primary"
               type="button"
               onClick={handleSubmit((values) => {
-                const params = new URLSearchParams(values as Record<string, string>);
+                const params = new URLSearchParams({
+                  startDate: values.startDate,
+                  endDate: values.endDate,
+                  activityType: values.activityType,
+                });
                 router.push(`/recap?${params.toString()}`);
               })}
             >

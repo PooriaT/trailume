@@ -53,7 +53,7 @@ packages/
 ### Prerequisites
 
 - Node.js 20+
-- npm 10+
+- pnpm
 - Python 3.13
 - Poetry 2.0+
 - Optional: Ollama (for local LLM narrative generation)
@@ -72,7 +72,7 @@ cp apps/api/.env.example apps/api/.env
 From repository root:
 
 ```bash
-npm install
+pnpm install
 cd apps/api
 poetry env use 3.13
 poetry install
@@ -84,14 +84,14 @@ cd ../..
 From repository root:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Or run each app separately:
 
 ```bash
-npm run dev:web
-npm run dev:api
+pnpm dev:web
+pnpm dev:api
 ```
 
 Default URLs:
@@ -166,20 +166,20 @@ poetry run ruff check app tests
 poetry run ruff format app tests
 ```
 
-Root scripts (`npm run dev:api`, `npm run test:api`, `npm run lint:api`, `npm run format:api`) call these Poetry commands.
+Root scripts (`pnpm dev:api`, `pnpm test:api`, `pnpm lint:api`, `pnpm format:api`) call these Poetry commands.
 
 ## Testing
 
 From repo root:
 
 ```bash
-npm test
+pnpm test
 ```
 
 Run backend tests only:
 
 ```bash
-npm run test:api
+pnpm test:api
 # or
 cd apps/api && poetry run pytest
 ```
@@ -187,9 +187,9 @@ cd apps/api && poetry run pytest
 Run frontend tests only:
 
 ```bash
-npm run test:web
+pnpm test:web
 # or
-cd apps/web && npm test
+cd apps/web && pnpm test
 ```
 
 ## Continuous Integration
@@ -199,11 +199,11 @@ GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs on:
 - pushes to `main`
 
 CI validates:
-- frontend dependency install + frontend test suite (`npm run test:web`)
+- frontend dependency install + frontend test suite (`pnpm test:web`)
 - backend dependency install + backend test suite (`poetry run pytest`)
 
 CI assumptions:
-- dependencies are installed with npm (frontend) and Poetry (backend) in CI
+- dependencies are installed with pnpm (frontend) and Poetry (backend) in CI
 - backend tests run with safe dummy Strava/Ollama env values; CI does **not** require live Strava or Ollama services
 
 ## Current MVP scope
