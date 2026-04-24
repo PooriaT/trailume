@@ -67,3 +67,7 @@ htmlcov/
 *.sqlite
 *.sqlite3
 *.db
+
+# Lock files
+package-lock.json
+apps/api/poetry.lock
