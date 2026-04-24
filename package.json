@@ -2,19 +2,22 @@
   "name": "trailume",
   "private": true,
   "version": "0.1.0",
+  "workspaces": [
+    "apps/web"
+  ],
   "scripts": {
-    "dev": "bash -lc 'pids=(); cleanup(){ for pid in \"${pids[@]}\"; do kill \"$pid\" 2>/dev/null || true; done; }; trap cleanup EXIT INT TERM; pnpm dev:api & pids+=($!); pnpm dev:web & pids+=($!); wait \"${pids[@]}\"'",
-    "dev:web": "pnpm --filter @trailume/web dev",
+    "dev": "bash -lc 'pids=(); cleanup(){ for pid in \"${pids[@]}\"; do kill \"$pid\" 2>/dev/null || true; done; }; trap cleanup EXIT INT TERM; npm run dev:api & pids+=($!); npm run dev:web & pids+=($!); wait \"${pids[@]}\"'",
+    "dev:web": "npm run dev --workspace @trailume/web",
     "dev:api": "bash -lc 'cd apps/api && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000'",
-    "build:web": "pnpm --filter @trailume/web build",
-    "start:web": "pnpm --filter @trailume/web start",
-    "lint": "pnpm lint:web && pnpm lint:api",
-    "lint:web": "pnpm --filter @trailume/web lint",
+    "build:web": "npm run build --workspace @trailume/web",
+    "start:web": "npm run start --workspace @trailume/web",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "npm run lint --workspace @trailume/web",
     "lint:api": "bash -lc 'cd apps/api && poetry run ruff check app tests'",
     "format:api": "bash -lc 'cd apps/api && poetry run ruff format app tests'",
     "test:api": "bash -lc 'cd apps/api && poetry run pytest'",
-    "format": "pnpm format:api",
-    "test:web": "pnpm --filter @trailume/web test",
-    "test": "pnpm test:api && pnpm test:web"
+    "format": "npm run format:api",
+    "test:web": "npm run test --workspace @trailume/web",
+    "test": "npm run test:api && npm run test:web"
   }
 }

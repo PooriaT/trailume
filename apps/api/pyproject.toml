@@ -13,9 +13,13 @@ dependencies = [
   "python-dotenv>=1.0.1",
 ]
 
+
+[tool.poetry.dependencies]
+python = ">=3.13,<3.14"
+
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3.4"
-ruff = ">=0.8.4"
+ruff = {version = ">=0.8.4", python = ">=3.7"}
 
 [tool.poetry]
 package-mode = false
