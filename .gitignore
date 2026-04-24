@@ -13,6 +13,18 @@ Thumbs.db
 .env.*
 !.env.example
 .envrc
+*.local
+
+# Secrets / credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.secret
+*.secrets
+secrets.*
 
 # Logs
 *.log
@@ -24,10 +36,17 @@ pnpm-debug.log*
 # Node / pnpm / Next.js
 node_modules/
 .pnpm-store/
+.turbo/
+.vercel/
 .next/
 out/
 dist/
 *.tsbuildinfo
+
+# Non-pnpm package manager lock files
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
 
 # Python bytecode and caches
 __pycache__/
@@ -44,6 +63,7 @@ ENV/
 
 # Poetry
 poetry.toml
+poetry.lock
 
 # Python packaging/build artifacts
 *.egg-info/
@@ -67,7 +87,6 @@ htmlcov/
 *.sqlite
 *.sqlite3
 *.db
-
-# Lock files
-package-lock.json
-apps/api/poetry.lock
+*.db-journal
+*.db-shm
+*.db-wal

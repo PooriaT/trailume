@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -44,7 +44,7 @@ function RecapErrorState({ message }: { message?: string }) {
   );
 }
 
-export default function RecapPage() {
+function RecapPageContent() {
   const searchParams = useSearchParams();
   const payload = useMemo<RecapFormValues>(
     () => ({
@@ -81,5 +81,13 @@ export default function RecapPage() {
       <NarrativeTextSection narrative={recap.narrative} />
       <MapSection recap={recap} />
     </main>
+  );
+}
+
+export default function RecapPage() {
+  return (
+    <Suspense fallback={<RecapLoadingState />}>
+      <RecapPageContent />
+    </Suspense>
   );
 }

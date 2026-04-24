@@ -18,7 +18,7 @@ MVP user flow:
 Trailume is a monorepo with two runnable apps:
 
 - **`apps/web`**: Next.js UI for auth flow, recap controls, and recap presentation.
-- **`apps/api`**: FastAPI service for Strava integration, analytics computation, and narrative generation.
+- **`apps/api`**: FastAPI service for Strava integration, analytics computation, and narrative generation. See [`apps/api/README.md`](apps/api/README.md) for backend-specific setup details.
 
 Current backend boundaries:
 - `services/strava`: OAuth, token refresh, and activity fetch/normalize.
@@ -53,7 +53,7 @@ packages/
 ### Prerequisites
 
 - Node.js 20+
-- npm 10+
+- pnpm
 - Python 3.13
 - Poetry 2.0+
 - Optional: Ollama (for local LLM narrative generation)
@@ -63,7 +63,7 @@ packages/
 Copy the example env files:
 
 ```bash
-cp .env.example apps/web/.env.local
+cp apps/web/.env.example apps/web/.env.local
 cp apps/api/.env.example apps/api/.env
 ```
 
@@ -72,26 +72,39 @@ cp apps/api/.env.example apps/api/.env
 From repository root:
 
 ```bash
-npm install
+pnpm install
 cd apps/api
 poetry env use 3.13
 poetry install
 cd ../..
 ```
 
-### 3) Run frontend and backend
+### 3) Optional: run the local LLM narrative model
+
+Trailume can generate recap narrative text with a local Ollama model. Without Ollama, recap generation still works with deterministic fallback text.
+
+Install Ollama from `https://ollama.com/download`, then run:
+
+```bash
+ollama serve
+ollama pull gemma4
+```
+
+The backend defaults to `OLLAMA_BASE_URL=http://localhost:11434` and `OLLAMA_MODEL=gemma4`. If you use another local model, set `OLLAMA_MODEL` in `apps/api/.env`.
+
+### 4) Run frontend and backend
 
 From repository root:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Or run each app separately:
 
 ```bash
-npm run dev:web
-npm run dev:api
+pnpm dev:web
+pnpm dev:api
 ```
 
 Default URLs:
@@ -104,6 +117,8 @@ Default URLs:
 
 - `NEXT_PUBLIC_API_BASE_URL` (default: `http://localhost:8000`)
 
+Strava credentials are not used by the frontend and should not be added to `apps/web/.env.local`.
+
 ### Backend (`apps/api/.env`)
 
 Core runtime:
@@ -113,8 +128,8 @@ Core runtime:
 - `WEB_APP_URL`
 
 Strava integration:
-- `STRAVA_CLIENT_ID`
-- `STRAVA_CLIENT_SECRET`
+- `STRAVA_CLIENT_ID` (numeric Client ID from Strava API settings)
+- `STRAVA_CLIENT_SECRET` (Client Secret from Strava API settings)
 - `STRAVA_REDIRECT_URI` (default: `http://localhost:8000/api/v1/auth/strava/callback`)
 
 Narrative/Ollama:
@@ -134,27 +149,24 @@ Session cookie behavior:
 1. Open `https://www.strava.com/settings/api` and create an API application.
 2. Use `localhost` as callback domain for local development.
 3. Configure backend env values:
-   - `STRAVA_CLIENT_ID`
-   - `STRAVA_CLIENT_SECRET`
+   - `STRAVA_CLIENT_ID=<numeric Client ID from Strava>`
+   - `STRAVA_CLIENT_SECRET=<Client Secret from Strava>`
    - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
-4. Start Trailume and use **Connect with Strava** from the home page.
+4. Make sure `apps/api/.env` no longer contains the example placeholders `your_client_id` or `your_client_secret`.
+5. Start Trailume and use **Connect with Strava** from the home page.
+6. On Strava's authorization screen, approve activity access. Trailume requires the `activity:read_all` scope to preview activities.
 
 ## Ollama setup
 
-Install Ollama from `https://ollama.com/download`, then run:
-
-```bash
-ollama serve
-ollama pull gemma4
-```
-
-If you use another local model, set `OLLAMA_MODEL` in `apps/api/.env`.
+The local setup section above includes the commands needed to run the default local Ollama model.
 
 Narrative provider behavior:
 - If Ollama is reachable and the configured model exists, Trailume uses Ollama.
 - Otherwise Trailume automatically falls back to deterministic narrative generation.
 
 ## Backend developer workflow (Poetry)
+
+For backend-specific configuration, environment variables, and local API workflow, see [`apps/api/README.md`](apps/api/README.md).
 
 All backend commands are Poetry-based:
 
@@ -166,20 +178,20 @@ poetry run ruff check app tests
 poetry run ruff format app tests
 ```
 
-Root scripts (`npm run dev:api`, `npm run test:api`, `npm run lint:api`, `npm run format:api`) call these Poetry commands.
+Root scripts (`pnpm dev:api`, `pnpm test:api`, `pnpm lint:api`, `pnpm format:api`) call these Poetry commands.
 
 ## Testing
 
 From repo root:
 
 ```bash
-npm test
+pnpm test
 ```
 
 Run backend tests only:
 
 ```bash
-npm run test:api
+pnpm test:api
 # or
 cd apps/api && poetry run pytest
 ```
@@ -187,9 +199,9 @@ cd apps/api && poetry run pytest
 Run frontend tests only:
 
 ```bash
-npm run test:web
+pnpm test:web
 # or
-cd apps/web && npm test
+cd apps/web && pnpm test
 ```
 
 ## Continuous Integration
@@ -199,11 +211,11 @@ GitHub Actions CI is defined in `.github/workflows/ci.yml` and runs on:
 - pushes to `main`
 
 CI validates:
-- frontend dependency install + frontend test suite (`npm run test:web`)
+- frontend dependency install + frontend test suite (`pnpm test:web`)
 - backend dependency install + backend test suite (`poetry run pytest`)
 
 CI assumptions:
-- dependencies are installed with npm (frontend) and Poetry (backend) in CI
+- dependencies are installed with pnpm (frontend) and Poetry (backend) in CI
 - backend tests run with safe dummy Strava/Ollama env values; CI does **not** require live Strava or Ollama services
 
 ## Current MVP scope

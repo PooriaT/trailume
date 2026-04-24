@@ -13,10 +13,12 @@ If Ollama is unavailable or returns invalid output, fallback generation is used 
 
 ## Required environment variables
 
-- `STRAVA_CLIENT_ID`
-- `STRAVA_CLIENT_SECRET`
+- `STRAVA_CLIENT_ID` (numeric Client ID from Strava API settings)
+- `STRAVA_CLIENT_SECRET` (Client Secret from Strava API settings)
 - `STRAVA_REDIRECT_URI` (default: `http://localhost:8000/api/v1/auth/strava/callback`)
 - `WEB_APP_URL` (default: `http://localhost:3000`)
+
+When connecting Strava, approve activity access on the authorization screen. Activity preview requires the `activity:read_all` OAuth scope.
 
 ### Ollama configuration
 
