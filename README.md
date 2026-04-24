@@ -18,7 +18,7 @@ MVP user flow:
 Trailume is a monorepo with two runnable apps:
 
 - **`apps/web`**: Next.js UI for auth flow, recap controls, and recap presentation.
-- **`apps/api`**: FastAPI service for Strava integration, analytics computation, and narrative generation.
+- **`apps/api`**: FastAPI service for Strava integration, analytics computation, and narrative generation. See [`apps/api/README.md`](apps/api/README.md) for backend-specific setup details.
 
 Current backend boundaries:
 - `services/strava`: OAuth, token refresh, and activity fetch/normalize.
@@ -79,7 +79,20 @@ poetry install
 cd ../..
 ```
 
-### 3) Run frontend and backend
+### 3) Optional: run the local LLM narrative model
+
+Trailume can generate recap narrative text with a local Ollama model. Without Ollama, recap generation still works with deterministic fallback text.
+
+Install Ollama from `https://ollama.com/download`, then run:
+
+```bash
+ollama serve
+ollama pull gemma4
+```
+
+The backend defaults to `OLLAMA_BASE_URL=http://localhost:11434` and `OLLAMA_MODEL=gemma4`. If you use another local model, set `OLLAMA_MODEL` in `apps/api/.env`.
+
+### 4) Run frontend and backend
 
 From repository root:
 
@@ -141,20 +154,15 @@ Session cookie behavior:
 
 ## Ollama setup
 
-Install Ollama from `https://ollama.com/download`, then run:
-
-```bash
-ollama serve
-ollama pull gemma4
-```
-
-If you use another local model, set `OLLAMA_MODEL` in `apps/api/.env`.
+The local setup section above includes the commands needed to run the default local Ollama model.
 
 Narrative provider behavior:
 - If Ollama is reachable and the configured model exists, Trailume uses Ollama.
 - Otherwise Trailume automatically falls back to deterministic narrative generation.
 
 ## Backend developer workflow (Poetry)
+
+For backend-specific configuration, environment variables, and local API workflow, see [`apps/api/README.md`](apps/api/README.md).
 
 All backend commands are Poetry-based:
 
