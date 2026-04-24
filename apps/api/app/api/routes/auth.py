@@ -51,7 +51,7 @@ def start_strava_auth() -> RedirectResponse:
 
 @router.get("/auth/strava/callback", response_model=StravaAuthCallbackResponse)
 def strava_auth_callback(
-    request: Request, code: str | None = None, state: str | None = None
+    request: Request, code: str | None = None, state: str | None = None, scope: str | None = None
 ) -> RedirectResponse:
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")
@@ -65,6 +65,14 @@ def strava_auth_callback(
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
 
     service = StravaService()
+    if not service.has_required_activity_scope(scope):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Strava activity read permission was not granted. "
+                "Reconnect with Strava and approve activity access."
+            ),
+        )
 
     try:
         tokens = service.exchange_authorization_code(code)

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 
 import httpx
 
@@ -17,21 +18,34 @@ class StravaAPIError(Exception):
     pass
 
 
+def _is_configured(value: str, placeholder: str) -> bool:
+    return bool(value and value.strip() and value != placeholder)
+
+
 class StravaService:
     auth_base_url = "https://www.strava.com/oauth/authorize"
     token_url = "https://www.strava.com/oauth/token"
     api_base_url = "https://www.strava.com/api/v3"
+    requested_scopes = ("read", "activity:read_all")
 
     def build_authorization_url(self, *, state: str) -> str:
-        if not settings.strava_client_id:
-            raise StravaAPIError("STRAVA_CLIENT_ID is missing")
-        return (
-            f"{self.auth_base_url}?client_id={settings.strava_client_id}"
-            f"&redirect_uri={settings.strava_redirect_uri}"
-            "&response_type=code&approval_prompt=auto"
-            "&scope=read,activity:read_all"
-            f"&state={state}"
-        )
+        if not _is_configured(settings.strava_client_id, "your_client_id"):
+            raise StravaAPIError("STRAVA_CLIENT_ID is not configured")
+        if not settings.strava_client_id.isdigit():
+            raise StravaAPIError("STRAVA_CLIENT_ID must be the numeric Client ID from Strava")
+        params = {
+            "client_id": settings.strava_client_id,
+            "redirect_uri": settings.strava_redirect_uri,
+            "response_type": "code",
+            "approval_prompt": "force",
+            "scope": ",".join(self.requested_scopes),
+            "state": state,
+        }
+        return f"{self.auth_base_url}?{urlencode(params)}"
+
+    def has_required_activity_scope(self, scope: str | None) -> bool:
+        granted_scopes = set((scope or "").split(","))
+        return "activity:read_all" in granted_scopes
 
     def exchange_authorization_code(self, code: str) -> StravaTokenResponse:
         payload = {
@@ -52,7 +66,9 @@ class StravaService:
         return self._request_tokens(payload)
 
     def _request_tokens(self, payload: dict[str, str]) -> StravaTokenResponse:
-        if not settings.strava_client_id or not settings.strava_client_secret:
+        if not _is_configured(settings.strava_client_id, "your_client_id") or not _is_configured(
+            settings.strava_client_secret, "your_client_secret"
+        ):
             raise StravaAPIError("Strava credentials are not configured")
 
         try:

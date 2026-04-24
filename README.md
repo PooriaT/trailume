@@ -63,7 +63,7 @@ packages/
 Copy the example env files:
 
 ```bash
-cp .env.example apps/web/.env.local
+cp apps/web/.env.example apps/web/.env.local
 cp apps/api/.env.example apps/api/.env
 ```
 
@@ -117,6 +117,8 @@ Default URLs:
 
 - `NEXT_PUBLIC_API_BASE_URL` (default: `http://localhost:8000`)
 
+Strava credentials are not used by the frontend and should not be added to `apps/web/.env.local`.
+
 ### Backend (`apps/api/.env`)
 
 Core runtime:
@@ -126,8 +128,8 @@ Core runtime:
 - `WEB_APP_URL`
 
 Strava integration:
-- `STRAVA_CLIENT_ID`
-- `STRAVA_CLIENT_SECRET`
+- `STRAVA_CLIENT_ID` (numeric Client ID from Strava API settings)
+- `STRAVA_CLIENT_SECRET` (Client Secret from Strava API settings)
 - `STRAVA_REDIRECT_URI` (default: `http://localhost:8000/api/v1/auth/strava/callback`)
 
 Narrative/Ollama:
@@ -147,10 +149,12 @@ Session cookie behavior:
 1. Open `https://www.strava.com/settings/api` and create an API application.
 2. Use `localhost` as callback domain for local development.
 3. Configure backend env values:
-   - `STRAVA_CLIENT_ID`
-   - `STRAVA_CLIENT_SECRET`
+   - `STRAVA_CLIENT_ID=<numeric Client ID from Strava>`
+   - `STRAVA_CLIENT_SECRET=<Client Secret from Strava>`
    - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
-4. Start Trailume and use **Connect with Strava** from the home page.
+4. Make sure `apps/api/.env` no longer contains the example placeholders `your_client_id` or `your_client_secret`.
+5. Start Trailume and use **Connect with Strava** from the home page.
+6. On Strava's authorization screen, approve activity access. Trailume requires the `activity:read_all` scope to preview activities.
 
 ## Ollama setup
 

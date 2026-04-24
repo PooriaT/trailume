@@ -1,6 +1,58 @@
 from datetime import datetime, timezone
+from urllib.parse import parse_qs, urlparse
 
-from app.services.strava.client import StravaService
+import pytest
+
+from app.services.strava.client import StravaAPIError, StravaService
+from app.services.strava.client import settings as strava_settings
+
+
+def test_authorization_url_rejects_placeholder_client_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = StravaService()
+
+    monkeypatch.setattr(strava_settings, "strava_client_id", "your_client_id")
+
+    with pytest.raises(StravaAPIError, match="STRAVA_CLIENT_ID is not configured"):
+        service.build_authorization_url(state="state")
+
+
+def test_authorization_url_requires_numeric_client_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = StravaService()
+
+    monkeypatch.setattr(strava_settings, "strava_client_id", "not-a-number")
+
+    with pytest.raises(StravaAPIError, match="numeric Client ID"):
+        service.build_authorization_url(state="state")
+
+
+def test_authorization_url_forces_activity_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = StravaService()
+
+    monkeypatch.setattr(strava_settings, "strava_client_id", "123456")
+    monkeypatch.setattr(
+        strava_settings,
+        "strava_redirect_uri",
+        "http://localhost:8000/api/v1/auth/strava/callback",
+    )
+
+    parsed = urlparse(service.build_authorization_url(state="state"))
+    params = parse_qs(parsed.query)
+
+    assert params["approval_prompt"] == ["force"]
+    assert params["scope"] == ["read,activity:read_all"]
+    assert params["state"] == ["state"]
+
+
+def test_required_activity_scope_accepts_activity_read_all() -> None:
+    service = StravaService()
+
+    assert service.has_required_activity_scope("read,activity:read_all") is True
+
+
+def test_required_activity_scope_rejects_read_only() -> None:
+    service = StravaService()
+
+    assert service.has_required_activity_scope("read") is False
 
 
 def test_to_unix_utc_preserves_original_offset() -> None:
