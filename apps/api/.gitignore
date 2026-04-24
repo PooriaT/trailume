@@ -2,8 +2,48 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.hypothesis/
 .venv/
 venv/
+ENV/
 .env
+.env.*
+!.env.example
+*.local
+*.log
 
+# Secrets / credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.secret
+*.secrets
+secrets.*
+
+# Dependency / lock files kept local for this backend
+poetry.toml
 poetry.lock
+
+# Python packaging/build artifacts
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+build/
+dist/
+
+# Coverage and local runtime artifacts
+.coverage
+.coverage.*
+coverage/
+coverage.xml
+htmlcov/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
