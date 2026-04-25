@@ -19,8 +19,9 @@ export class ApiError extends Error {
   }
 }
 
-export function getStravaLoginUrl() {
-  return `${API_BASE_URL}/api/v1/auth/strava/login`;
+export function getStravaLoginUrl(returnTo?: string) {
+  const params = returnTo ? `?${new URLSearchParams({ return_to: returnTo }).toString()}` : "";
+  return `${API_BASE_URL}/api/v1/auth/strava/login${params}`;
 }
 
 async function parseErrorResponse(res: Response, fallbackMessage: string): Promise<ApiError> {

@@ -19,13 +19,21 @@ interface TrendPoint {
 
 export function TrendChartSection({ points }: { points: TrendPoint[] }) {
   if (!points.length) {
-    return <section className="panel-subtle">Not enough data to show a trend chart.</section>;
+    return (
+      <section className="panel-subtle">
+        <h2>Momentum trend</h2>
+        <p>Not enough data to show a trend chart.</p>
+      </section>
+    );
   }
 
   return (
-    <section className="panel chart-panel">
+    <section className="panel chart-panel recap-section">
       <div className="section-heading-row">
-        <h2>Momentum trend</h2>
+        <div>
+          <p className="eyebrow">Pattern</p>
+          <h2>Momentum trend</h2>
+        </div>
       </div>
       <div className="chart-shell">
         <ResponsiveContainer width="100%" height="100%">

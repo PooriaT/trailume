@@ -12,6 +12,7 @@ class StravaTokenSet:
 @dataclass
 class StravaSession:
     state: str
+    return_url: str | None = None
     tokens: StravaTokenSet | None = None
     athlete_id: int | None = None
     athlete_name: str | None = None
@@ -21,8 +22,8 @@ class InMemoryStravaTokenStore:
     def __init__(self) -> None:
         self._sessions: dict[str, StravaSession] = {}
 
-    def create_pending_session(self, session_id: str, state: str) -> None:
-        self._sessions[session_id] = StravaSession(state=state)
+    def create_pending_session(self, session_id: str, state: str, return_url: str | None = None) -> None:
+        self._sessions[session_id] = StravaSession(state=state, return_url=return_url)
 
     def get_session(self, session_id: str) -> StravaSession | None:
         return self._sessions.get(session_id)

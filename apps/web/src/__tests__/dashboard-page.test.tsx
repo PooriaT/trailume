@@ -53,6 +53,7 @@ describe("DashboardPage", () => {
 
     renderPage();
 
+    await screen.findByLabelText("Start date");
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-01-01" } });
     fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-01-03" } });
     fireEvent.change(screen.getByLabelText("Activity type"), { target: { value: "running" } });
@@ -73,6 +74,7 @@ describe("DashboardPage", () => {
     (fetchActivities as jest.Mock).mockRejectedValue(new ApiError("Auth required", 401));
 
     renderPage();
+    await screen.findByRole("button", { name: "Preview activities" });
     fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
 
     expect(await screen.findByText("Auth required")).toBeInTheDocument();
@@ -81,6 +83,7 @@ describe("DashboardPage", () => {
   it("navigates to recap route with query params", async () => {
     renderPage();
 
+    await screen.findByLabelText("Start date");
     fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-01-10" } });
     fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-01-12" } });
     fireEvent.change(screen.getByLabelText("Activity type"), { target: { value: "cycling" } });

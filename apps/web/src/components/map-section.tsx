@@ -5,23 +5,21 @@ export function MapSection({ recap }: { recap: RecapResponse }) {
     ? `You repeatedly returned to ${recap.insightFlags.repeatedRouteName ?? "a familiar route"}.`
     : null;
 
+  if (!routeHint) {
+    return null;
+  }
+
   return (
-    <section className="panel">
+    <section className="panel recap-section">
       <div className="section-heading-row">
-        <h2>Route map</h2>
+        <div>
+          <p className="eyebrow">Route signal</p>
+          <h2>Map context</h2>
+        </div>
       </div>
       <div className="map-shell">
-        {routeHint ? (
-          <>
-            <p>{routeHint}</p>
-            <p className="muted">
-              Route geometry is not available in this MVP payload yet. This section is ready to use OpenStreetMap tiles
-              when polyline data is connected.
-            </p>
-          </>
-        ) : (
-          <p className="muted">No route/map data available for this recap.</p>
-        )}
+        <p>{routeHint}</p>
+        <p className="muted">Route geometry is not available in this MVP payload yet.</p>
       </div>
     </section>
   );
