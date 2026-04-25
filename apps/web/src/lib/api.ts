@@ -1,4 +1,10 @@
-import { RecapFormValues, RecapResponse, StravaActivitiesResponse, StravaAuthStatus } from "@/types/recap";
+import {
+  RecapFormValues,
+  RecapResponse,
+  StravaActivitiesResponse,
+  StravaAuthStatus,
+  StravaDisconnectResponse,
+} from "@/types/recap";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
@@ -48,6 +54,17 @@ export async function getStravaAuthStatus() {
     `${API_BASE_URL}/api/v1/auth/strava/status`,
     { credentials: "include" },
     "Failed to read Strava auth state.",
+  );
+}
+
+export async function disconnectStrava() {
+  return apiFetch<StravaDisconnectResponse>(
+    `${API_BASE_URL}/api/v1/auth/strava/disconnect`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+    "Failed to disconnect from Strava.",
   );
 }
 

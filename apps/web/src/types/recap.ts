@@ -105,6 +105,12 @@ export interface StravaAuthStatus {
   athleteName?: string | null;
 }
 
+export interface StravaDisconnectResponse {
+  connected: false;
+  provider: "strava";
+  message: string;
+}
+
 export interface StravaActivity {
   id: string;
   name: string;

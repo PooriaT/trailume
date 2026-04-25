@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import DashboardPage from "@/app/dashboard/page";
-import { ApiError, fetchActivities, getStravaAuthStatus } from "@/lib/api";
+import { ApiError, disconnectStrava, fetchActivities, getStravaAuthStatus } from "@/lib/api";
 
 const push = jest.fn();
 
@@ -13,6 +13,7 @@ jest.mock("@/lib/api", () => {
   const actual = jest.requireActual("@/lib/api");
   return {
     ...actual,
+    disconnectStrava: jest.fn(),
     fetchActivities: jest.fn(),
     getStravaAuthStatus: jest.fn(),
   };
@@ -33,7 +34,18 @@ function renderPage() {
 describe("DashboardPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.sessionStorage.clear();
     (getStravaAuthStatus as jest.Mock).mockResolvedValue({ connected: true, athleteName: "Casey" });
+    (disconnectStrava as jest.Mock).mockResolvedValue({
+      connected: false,
+      provider: "strava",
+      message: "Disconnected from Strava",
+    });
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("submits filter values to activity preview API", async () => {
@@ -79,5 +91,42 @@ describe("DashboardPage", () => {
         "/recap?startDate=2026-01-10&endDate=2026-01-12&activityType=cycling",
       );
     });
+  });
+
+  it("confirms disconnect, clears auth state, and returns to landing", async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Disconnect from Strava" }));
+
+    await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalledWith(
+        "Disconnect from Strava? Trailume will clear your connection, filters, activity preview, and generated recap.",
+      );
+      expect(disconnectStrava).toHaveBeenCalled();
+      expect(push).toHaveBeenCalledWith("/");
+    });
+    expect(window.sessionStorage.getItem("trailume:auth-message")).toBe("Disconnected from Strava");
+  });
+
+  it("keeps the current state when disconnect is cancelled", async () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Disconnect from Strava" }));
+
+    expect(disconnectStrava).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("shows a user-facing error when disconnect fails", async () => {
+    (disconnectStrava as jest.Mock).mockRejectedValue(new ApiError("Could not disconnect", 500));
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Disconnect from Strava" }));
+
+    expect(await screen.findByText("Could not disconnect")).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 });

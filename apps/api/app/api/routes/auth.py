@@ -1,12 +1,16 @@
 from secrets import token_urlsafe
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.api.errors import strava_http_exception
 from app.api.session import SESSION_COOKIE_NAME
 from app.core.config import settings
-from app.models.contracts import StravaAuthCallbackResponse, StravaAuthStatusResponse
+from app.models.contracts import (
+    StravaAuthCallbackResponse,
+    StravaAuthStatusResponse,
+    StravaDisconnectResponse,
+)
 from app.services.strava.client import StravaAPIError, StravaService
 from app.services.strava.token_store import strava_token_store
 
@@ -105,3 +109,13 @@ def strava_auth_status(request: Request) -> StravaAuthStatusResponse:
     if not session or not session.tokens:
         return StravaAuthStatusResponse(connected=False)
     return StravaAuthStatusResponse(connected=True, athleteName=session.athlete_name)
+
+
+@router.post("/auth/strava/disconnect", response_model=StravaDisconnectResponse)
+def disconnect_strava(request: Request, response: Response) -> StravaDisconnectResponse:
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id:
+        strava_token_store.disconnect_session(session_id)
+
+    response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+    return StravaDisconnectResponse(message="Disconnected from Strava")

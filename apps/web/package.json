@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "clean": "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\"",
+    "dev": "pnpm clean && next dev",
+    "build": "pnpm clean && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --passWithNoTests",

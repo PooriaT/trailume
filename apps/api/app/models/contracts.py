@@ -17,6 +17,12 @@ class StravaAuthCallbackResponse(BaseModel):
     provider: str = "strava"
 
 
+class StravaDisconnectResponse(BaseModel):
+    connected: bool = False
+    provider: str = "strava"
+    message: str
+
+
 class RecapGenerateRequest(BaseModel):
     start_date: date = Field(alias="startDate")
     end_date: date = Field(alias="endDate")

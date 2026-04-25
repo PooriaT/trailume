@@ -12,6 +12,7 @@ MVP user flow:
 3. Review fetched activities.
 4. Generate a recap from deterministic analytics.
 5. Add narrative text from Ollama when available (otherwise deterministic fallback).
+6. Disconnect from Strava when finished to clear the local session, tokens, filters, activity preview, and recap state.
 
 ## Architecture summary
 
@@ -155,6 +156,7 @@ Session cookie behavior:
 4. Make sure `apps/api/.env` no longer contains the example placeholders `your_client_id` or `your_client_secret`.
 5. Start Trailume and use **Connect with Strava** from the home page.
 6. On Strava's authorization screen, approve activity access. Trailume requires the `activity:read_all` scope to preview activities.
+7. Use **Disconnect from Strava** in the recap builder to clear the MVP auth session and return to the pre-auth landing state.
 
 ## Ollama setup
 
