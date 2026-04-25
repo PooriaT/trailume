@@ -1,4 +1,4 @@
-import { ApiError, fetchActivities } from "@/lib/api";
+import { ApiError, disconnectStrava, fetchActivities } from "@/lib/api";
 
 type MockResponseShape = {
   ok: boolean;
@@ -48,6 +48,26 @@ describe("api client", () => {
       fetchActivities({ startDate: "2026-01-01", endDate: "2026-01-31", activityType: "all" }),
     ).rejects.toEqual(
       expect.objectContaining<ApiError>({ message: "Strava auth required", status: 401 }),
+    );
+  });
+
+  it("posts to Strava disconnect endpoint with credentials", async () => {
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue(
+      mockJsonResponse({
+        connected: false,
+        provider: "strava",
+        message: "Disconnected from Strava",
+      }) as unknown as Response,
+    );
+
+    await expect(disconnectStrava()).resolves.toEqual({
+      connected: false,
+      provider: "strava",
+      message: "Disconnected from Strava",
+    });
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/auth/strava/disconnect"),
+      expect.objectContaining({ method: "POST", credentials: "include" }),
     );
   });
 });

@@ -67,11 +67,18 @@ p {
   color: #b91c1c;
 }
 
+.success-text {
+  color: #047857;
+  font-weight: 600;
+}
+
 .section-heading-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -95,6 +102,16 @@ p {
 .btn-ghost {
   background: #eef2ff;
   color: #312e81;
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .cta-row {

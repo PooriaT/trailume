@@ -54,6 +54,9 @@ class InMemoryStravaTokenStore:
             return
         session.tokens = token_set
 
+    def disconnect_session(self, session_id: str) -> None:
+        self._sessions.pop(session_id, None)
+
     def is_expired(self, session_id: str) -> bool:
         session = self._sessions.get(session_id)
         if not session or not session.tokens:

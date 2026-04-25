@@ -1,11 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getStravaAuthStatus, getStravaLoginUrl } from "@/lib/api";
+import { getAuthState } from "@/lib/auth-state";
 
 export default function HomePage() {
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
+  const authState = getAuthState({
+    connected: statusQuery.data?.connected,
+    isLoading: statusQuery.isLoading,
+    isError: statusQuery.isError,
+    isTransitioning: isConnecting,
+  });
+
+  useEffect(() => {
+    const message = window.sessionStorage.getItem("trailume:auth-message");
+    if (!message) {
+      return;
+    }
+    setStatusMessage(message);
+    window.sessionStorage.removeItem("trailume:auth-message");
+  }, []);
 
   return (
     <main className="page-shell landing-layout">
@@ -19,23 +38,28 @@ export default function HomePage() {
         <div className="cta-row">
           <button
             className="btn btn-primary"
+            disabled={isConnecting}
             onClick={() => {
+              setIsConnecting(true);
               window.location.href = getStravaLoginUrl();
             }}
           >
-            Connect with Strava
+            {isConnecting ? "Connecting..." : "Connect with Strava"}
           </button>
           <Link className="btn btn-ghost" href="/dashboard">
             Open recap builder
           </Link>
         </div>
 
+        {statusMessage ? <p className="success-text">{statusMessage}</p> : null}
         <p className="muted">
-          {statusQuery.data?.connected
-            ? `Connected as ${statusQuery.data.athleteName ?? "your account"}.`
-            : "Not connected yet."}
+          {authState === "connected"
+            ? `Connected as ${statusQuery.data?.athleteName ?? "your account"}.`
+            : null}
+          {authState === "connecting" ? "Checking Strava connection..." : null}
+          {authState === "not-connected" ? "Not connected yet." : null}
+          {authState === "error" ? "Unable to load auth status right now." : null}
         </p>
-        {statusQuery.isError ? <p className="error-text">Unable to load auth status right now.</p> : null}
       </section>
 
       <section className="panel feature-grid">
