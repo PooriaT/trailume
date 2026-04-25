@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
 
 from app.api.session import SESSION_COOKIE_NAME
@@ -68,3 +70,36 @@ def test_disconnect_strava_clears_tokens_and_session_cookie() -> None:
     assert strava_token_store.get_session(session_id) is None
     assert f"{SESSION_COOKIE_NAME}=" in response.headers["set-cookie"]
     assert "Max-Age=0" in response.headers["set-cookie"]
+
+
+def test_strava_callback_redirects_to_session_return_url(monkeypatch) -> None:
+    session_id = "callback-return-url-session"
+    strava_token_store.create_pending_session(session_id, "state", "http://localhost:3001")
+
+    class FakeStravaService:
+        def has_required_activity_scope(self, scope):
+            return scope == "activity:read_all"
+
+        def exchange_authorization_code(self, code):
+            assert code == "code"
+            return SimpleNamespace(
+                access_token="access",
+                refresh_token="refresh",
+                expires_at=2_000_000_000,
+            )
+
+        def fetch_athlete_profile(self, access_token):
+            assert access_token == "access"
+            return SimpleNamespace(id=123, firstname="Casey", lastname="Rider", username="casey")
+
+    monkeypatch.setattr("app.api.routes.auth.StravaService", FakeStravaService)
+
+    test_client = TestClient(app)
+    test_client.cookies.set(SESSION_COOKIE_NAME, session_id)
+    response = test_client.get(
+        "/api/v1/auth/strava/callback?code=code&state=state&scope=activity:read_all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "http://localhost:3001/dashboard?connected=strava"

@@ -18,8 +18,9 @@ function RecapLoadingState() {
   return (
     <main className="page-shell recap-layout">
       <section className="panel loading-panel">
+        <p className="eyebrow">Step 3</p>
         <h1>Building your recap</h1>
-        <p>Pulling your activities, shaping insights, and drafting your story.</p>
+        <p className="muted">Pulling your activities, shaping insights, and drafting your story.</p>
       </section>
       <div className="skeleton-grid">
         <div className="skeleton-card" />
@@ -35,10 +36,14 @@ function RecapErrorState({ message }: { message?: string }) {
     <main className="page-shell">
       <section className="panel error-panel">
         <h1>Couldn’t generate this recap</h1>
-        <p>{message ?? "Try refreshing, adjusting the date range, or checking Strava connection status."}</p>
-        <Link className="btn btn-primary" href="/dashboard">
-          Back to filters
-        </Link>
+        <p className="muted">
+          {message ?? "Try adjusting the date range, choosing a different activity type, or checking Strava connection status."}
+        </p>
+        <div className="cta-row centered">
+          <Link className="btn btn-primary" href="/dashboard">
+            Back to filters
+          </Link>
+        </div>
       </section>
     </main>
   );
@@ -76,10 +81,15 @@ function RecapPageContent() {
       <HeroRecapSection narrative={recap.narrative} metadata={recap.metadata} />
       <StatCardsSection metrics={recap.keyMetrics} />
       <HighlightCardsSection cards={recap.highlightCards} />
-      <TrendChartSection points={recap.chartPoints} />
       <StandoutActivityCardsSection activities={recap.standoutActivities} />
+      <TrendChartSection points={recap.chartPoints} />
       <NarrativeTextSection narrative={recap.narrative} />
       <MapSection recap={recap} />
+      <section className="recap-actions">
+        <Link className="btn btn-ghost" href="/dashboard">
+          Adjust filters
+        </Link>
+      </section>
     </main>
   );
 }

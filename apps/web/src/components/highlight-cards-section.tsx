@@ -2,13 +2,21 @@ import { HighlightCard } from "@/types/recap";
 
 export function HighlightCardsSection({ cards }: { cards: HighlightCard[] }) {
   if (!cards.length) {
-    return <section className="panel-subtle">No highlights were generated this time.</section>;
+    return (
+      <section className="panel-subtle">
+        <h2>Highlights</h2>
+        <p>No highlights were generated this time.</p>
+      </section>
+    );
   }
 
   return (
-    <section className="panel">
+    <section className="panel recap-section">
       <div className="section-heading-row">
-        <h2>Highlights</h2>
+        <div>
+          <p className="eyebrow">What stood out</p>
+          <h2>Highlights</h2>
+        </div>
       </div>
       <div className="highlight-grid">
         {cards.map((card) => (

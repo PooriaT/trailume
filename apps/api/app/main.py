@@ -9,6 +9,9 @@ app = FastAPI(title="Trailume API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.web_app_url],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    if settings.app_env == "development"
+    else None,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,

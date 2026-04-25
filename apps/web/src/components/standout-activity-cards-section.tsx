@@ -2,13 +2,21 @@ import { StandoutActivity } from "@/types/recap";
 
 export function StandoutActivityCardsSection({ activities }: { activities: StandoutActivity[] }) {
   if (!activities.length) {
-    return <section className="panel-subtle">No standout activities found in this period.</section>;
+    return (
+      <section className="panel-subtle">
+        <h2>Standout activities</h2>
+        <p>No standout activities were found in this period.</p>
+      </section>
+    );
   }
 
   return (
-    <section className="panel">
+    <section className="panel recap-section">
       <div className="section-heading-row">
-        <h2>Standout activities</h2>
+        <div>
+          <p className="eyebrow">Memorable efforts</p>
+          <h2>Standout activities</h2>
+        </div>
       </div>
       <div className="standout-grid">
         {activities.map((item) => (

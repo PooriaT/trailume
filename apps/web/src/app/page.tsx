@@ -30,50 +30,62 @@ export default function HomePage() {
     <main className="page-shell landing-layout">
       <section className="landing-hero panel">
         <p className="eyebrow">Trailume MVP</p>
-        <h1>Turn your training into a story worth sharing.</h1>
+        <h1>Your Strava activities, shaped into a clear training story.</h1>
         <p className="hero-summary">
-          Connect Strava, choose a date range, and generate a polished recap with insights and narrative context.
+          Connect Strava, choose the activities that matter, and generate a focused recap with stats, highlights, and
+          narrative context.
         </p>
 
         <div className="cta-row">
-          <button
-            className="btn btn-primary"
-            disabled={isConnecting}
-            onClick={() => {
-              setIsConnecting(true);
-              window.location.href = getStravaLoginUrl();
-            }}
-          >
-            {isConnecting ? "Connecting..." : "Connect with Strava"}
-          </button>
-          <Link className="btn btn-ghost" href="/dashboard">
-            Open recap builder
-          </Link>
+          {authState === "connected" ? (
+            <Link className="btn btn-primary" href="/dashboard">
+              Build your recap
+            </Link>
+          ) : (
+            <button
+              className="btn btn-primary"
+              disabled={isConnecting || authState === "connecting"}
+              onClick={() => {
+                setIsConnecting(true);
+                window.location.href = getStravaLoginUrl(window.location.origin);
+              }}
+            >
+              {isConnecting ? "Connecting to Strava..." : "Connect with Strava"}
+            </button>
+          )}
         </div>
 
         {statusMessage ? <p className="success-text">{statusMessage}</p> : null}
-        <p className="muted">
+        <p className="status-line">
           {authState === "connected"
             ? `Connected as ${statusQuery.data?.athleteName ?? "your account"}.`
             : null}
           {authState === "connecting" ? "Checking Strava connection..." : null}
-          {authState === "not-connected" ? "Not connected yet." : null}
+          {authState === "not-connected" ? "Start by connecting Strava. Filters and recaps appear after connection." : null}
           {authState === "error" ? "Unable to load auth status right now." : null}
         </p>
       </section>
 
-      <section className="panel feature-grid">
+      <section className="panel flow-panel">
         <article>
-          <h3>1. Connect</h3>
-          <p>Secure Strava OAuth for activity data.</p>
+          <span>1</span>
+          <h3>Connect Strava</h3>
+          <p>Authorize Trailume to read the activities needed for your recap.</p>
         </article>
         <article>
-          <h3>2. Filter</h3>
-          <p>Focus on timeframe and sport type.</p>
+          <span>2</span>
+          <h3>Select filters</h3>
+          <p>Pick a date range and activity type so the story has a clear focus.</p>
         </article>
         <article>
-          <h3>3. Share</h3>
-          <p>Get a premium recap page built for screenshots.</p>
+          <span>3</span>
+          <h3>Generate recap</h3>
+          <p>Trailume groups stats, highlights, charts, and narrative into one page.</p>
+        </article>
+        <article>
+          <span>4</span>
+          <h3>View story</h3>
+          <p>Read the period back as a polished recap rather than a raw dashboard.</p>
         </article>
       </section>
     </main>

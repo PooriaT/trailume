@@ -1,6 +1,7 @@
 from secrets import token_urlsafe
+from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.api.errors import strava_http_exception
@@ -17,12 +18,43 @@ from app.services.strava.token_store import strava_token_store
 router = APIRouter(tags=["auth"])
 
 
+def _origin_from_url(value: str) -> str:
+    parsed = urlparse(value)
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def _is_local_dev_origin(value: str) -> bool:
+    parsed = urlparse(value)
+    return (
+        settings.app_env == "development"
+        and parsed.scheme in {"http", "https"}
+        and parsed.hostname in {"localhost", "127.0.0.1"}
+        and parsed.port is not None
+    )
+
+
+def _validated_return_url(return_to: str | None) -> str:
+    if not return_to:
+        return settings.web_app_url
+
+    parsed = urlparse(return_to)
+    if not parsed.scheme or not parsed.netloc or parsed.path not in {"", "/"}:
+        return settings.web_app_url
+
+    candidate_origin = _origin_from_url(return_to)
+    configured_origin = _origin_from_url(settings.web_app_url)
+    if candidate_origin == configured_origin or _is_local_dev_origin(candidate_origin):
+        return candidate_origin
+
+    return settings.web_app_url
+
+
 @router.get("/auth/strava/login")
-def start_strava_auth() -> RedirectResponse:
+def start_strava_auth(return_to: str | None = Query(default=None)) -> RedirectResponse:
     service = StravaService()
     session_id = token_urlsafe(24)
     state = token_urlsafe(24)
-    strava_token_store.create_pending_session(session_id, state)
+    strava_token_store.create_pending_session(session_id, state, _validated_return_url(return_to))
 
     try:
         auth_url = service.build_authorization_url(state=state)
@@ -97,7 +129,8 @@ def strava_auth_callback(
         athlete_name=athlete_name,
     )
 
-    return RedirectResponse(url=f"{settings.web_app_url}/dashboard?connected=strava")
+    return_url = session.return_url or settings.web_app_url
+    return RedirectResponse(url=f"{return_url}/dashboard?connected=strava")
 
 
 @router.get("/auth/strava/status", response_model=StravaAuthStatusResponse)

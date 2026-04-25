@@ -1,4 +1,4 @@
-import { ApiError, disconnectStrava, fetchActivities } from "@/lib/api";
+import { ApiError, disconnectStrava, fetchActivities, getStravaLoginUrl } from "@/lib/api";
 
 type MockResponseShape = {
   ok: boolean;
@@ -19,6 +19,12 @@ function mockJsonResponse(payload: unknown, status = 200): MockResponseShape {
 describe("api client", () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it("passes the current frontend origin to Strava login", () => {
+    expect(getStravaLoginUrl("http://localhost:3001")).toBe(
+      "http://localhost:8000/api/v1/auth/strava/login?return_to=http%3A%2F%2Flocalhost%3A3001",
+    );
   });
 
   it("builds expected activities query parameters", async () => {
@@ -47,7 +53,7 @@ describe("api client", () => {
     await expect(
       fetchActivities({ startDate: "2026-01-01", endDate: "2026-01-31", activityType: "all" }),
     ).rejects.toEqual(
-      expect.objectContaining<ApiError>({ message: "Strava auth required", status: 401 }),
+      expect.objectContaining<Partial<ApiError>>({ message: "Strava auth required", status: 401 }),
     );
   });
 
