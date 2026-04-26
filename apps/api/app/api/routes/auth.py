@@ -43,7 +43,9 @@ def _validated_return_url(return_to: str | None) -> str:
 
     candidate_origin = _origin_from_url(return_to)
     configured_origin = _origin_from_url(settings.web_app_url)
-    if candidate_origin == configured_origin or _is_local_dev_origin(candidate_origin):
+    if candidate_origin == configured_origin:
+        return settings.web_app_url
+    if _is_local_dev_origin(candidate_origin):
         return candidate_origin
 
     return settings.web_app_url

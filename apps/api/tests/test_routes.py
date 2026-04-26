@@ -103,3 +103,12 @@ def test_strava_callback_redirects_to_session_return_url(monkeypatch) -> None:
 
     assert response.status_code == 307
     assert response.headers["location"] == "http://localhost:3001/dashboard?connected=strava"
+
+
+def test_validated_return_url_preserves_configured_path_for_same_origin(monkeypatch) -> None:
+    from app.api.routes.auth import _validated_return_url
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "web_app_url", "https://example.com/trailume")
+
+    assert _validated_return_url("https://example.com") == "https://example.com/trailume"
