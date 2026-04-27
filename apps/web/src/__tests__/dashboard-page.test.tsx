@@ -108,6 +108,22 @@ describe("DashboardPage", () => {
     });
   });
 
+  it("allows historical Strava-era years in the date picker", async () => {
+    (fetchActivities as jest.Mock).mockResolvedValue({ activities: [], empty: true });
+
+    renderPage();
+
+    await screen.findByRole("button", { name: /^Start date:/ });
+    selectDate("Start date", "2009-07-01");
+    selectDate("End date", "2010-08-31");
+    fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
+
+    await waitFor(() => {
+      const calls = (fetchActivities as jest.Mock).mock.calls;
+      expect(calls.some(([arg]) => arg?.startDate === "2009-07-01" && arg?.endDate === "2010-08-31")).toBe(true);
+    });
+  });
+
   it("disables generation and shows a clear error for an invalid date range", async () => {
     renderPage();
 

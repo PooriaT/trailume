@@ -16,6 +16,7 @@ const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: "swimming", label: "Swimming" },
 ];
 const FLOW_STEPS = ["Connect Strava", "Select filters", "Generate recap", "View story"];
+const EARLIEST_SELECTABLE_YEAR = 1900;
 const MONTH_OPTIONS = [
   { value: "01", label: "Jan" },
   { value: "02", label: "Feb" },
@@ -52,7 +53,10 @@ function buildLocalDateValue(year: string, month: string, day: string): string {
 function getYearOptions(referenceDate: Date): string[] {
   const currentYear = referenceDate.getFullYear();
 
-  return Array.from({ length: 16 }, (_, index) => String(currentYear - index));
+  return Array.from(
+    { length: currentYear - EARLIEST_SELECTABLE_YEAR + 1 },
+    (_, index) => String(currentYear - index),
+  );
 }
 
 function formatDisplayDate(value: string): string {
