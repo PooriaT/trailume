@@ -1,19 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { ApiError, disconnectStrava, fetchActivities, getStravaAuthStatus, getStravaLoginUrl } from "@/lib/api";
 import { getAuthState } from "@/lib/auth-state";
+import { getDefaultRecapFilters, validateRecapDateRange } from "@/lib/date-filters";
 import { ActivityType, RecapFormValues } from "@/types/recap";
 
-const today = new Date().toISOString().slice(0, 10);
-const defaultFilters: RecapFormValues = {
-  startDate: today,
-  endDate: today,
-  activityType: "all",
-};
 const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: "all", label: "All activities" },
   { value: "cycling", label: "Cycling" },
@@ -21,6 +16,225 @@ const ACTIVITY_OPTIONS: { value: ActivityType; label: string }[] = [
   { value: "swimming", label: "Swimming" },
 ];
 const FLOW_STEPS = ["Connect Strava", "Select filters", "Generate recap", "View story"];
+const EARLIEST_SELECTABLE_YEAR = 1900;
+const MONTH_OPTIONS = [
+  { value: "01", label: "Jan" },
+  { value: "02", label: "Feb" },
+  { value: "03", label: "Mar" },
+  { value: "04", label: "Apr" },
+  { value: "05", label: "May" },
+  { value: "06", label: "Jun" },
+  { value: "07", label: "Jul" },
+  { value: "08", label: "Aug" },
+  { value: "09", label: "Sep" },
+  { value: "10", label: "Oct" },
+  { value: "11", label: "Nov" },
+  { value: "12", label: "Dec" },
+];
+
+function padDatePart(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+function getDateParts(value: string) {
+  const [year = "", month = "", day = ""] = value.split("-");
+  return { year, month, day };
+}
+
+function buildLocalDateValue(year: string, month: string, day: string): string {
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  const maxDay = new Date(Number(year), Number(month), 0).getDate();
+  return `${year}-${month}-${padDatePart(Math.min(Number(day), maxDay))}`;
+}
+
+function getYearOptions(referenceDate: Date): string[] {
+  const currentYear = referenceDate.getFullYear();
+
+  return Array.from(
+    { length: currentYear - EARLIEST_SELECTABLE_YEAR + 1 },
+    (_, index) => String(currentYear - index),
+  );
+}
+
+function formatDisplayDate(value: string): string {
+  const { year, month, day } = getDateParts(value);
+  if (!year || !month || !day) {
+    return "Select date";
+  }
+
+  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getCalendarDays(year: string, month: string) {
+  const firstDay = new Date(Number(year), Number(month) - 1, 1).getDay();
+  const dayCount = new Date(Number(year), Number(month), 0).getDate();
+
+  return [
+    ...Array.from({ length: firstDay }, () => null),
+    ...Array.from({ length: dayCount }, (_, index) => padDatePart(index + 1)),
+  ];
+}
+
+function DatePickerField({
+  label,
+  value,
+  onChange,
+  onBlur,
+  errorMessage,
+  yearOptions,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  errorMessage?: string;
+  yearOptions: string[];
+}) {
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const { year, month, day } = getDateParts(value);
+  const [visibleYear, setVisibleYear] = useState(year || yearOptions[0] || String(new Date().getFullYear()));
+  const [visibleMonth, setVisibleMonth] = useState(month || padDatePart(new Date().getMonth() + 1));
+  const invalid = Boolean(errorMessage);
+  const calendarDays = getCalendarDays(visibleYear, visibleMonth);
+  const visibleMonthLabel = MONTH_OPTIONS.find((option) => option.value === visibleMonth)?.label ?? visibleMonth;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [isOpen]);
+
+  function moveMonth(offset: number) {
+    const nextDate = new Date(Number(visibleYear), Number(visibleMonth) - 1 + offset, 1);
+    const nextYear = String(nextDate.getFullYear());
+
+    if (!yearOptions.includes(nextYear)) {
+      return;
+    }
+
+    setVisibleYear(nextYear);
+    setVisibleMonth(padDatePart(nextDate.getMonth() + 1));
+  }
+
+  return (
+    <div className="date-picker-field" ref={pickerRef}>
+      <label>
+        {label}
+        <button
+          className="date-menu-button"
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          aria-invalid={invalid ? "true" : "false"}
+          aria-label={`${label}: ${formatDisplayDate(value)}`}
+          onBlur={onBlur}
+          onClick={() => {
+            setVisibleYear(year || visibleYear);
+            setVisibleMonth(month || visibleMonth);
+            setIsOpen((current) => !current);
+          }}
+        >
+          <span>{formatDisplayDate(value)}</span>
+          <span aria-hidden="true">v</span>
+        </button>
+      </label>
+
+      {isOpen ? (
+        <div className="date-popover" role="dialog" aria-label={`${label} picker`}>
+          <div className="date-popover-header">
+            <button className="icon-button" type="button" aria-label={`${label} previous month`} onClick={() => moveMonth(-1)}>
+              &lt;
+            </button>
+            <strong>
+              {visibleMonthLabel} {visibleYear}
+            </strong>
+            <button className="icon-button" type="button" aria-label={`${label} next month`} onClick={() => moveMonth(1)}>
+              &gt;
+            </button>
+          </div>
+
+          <div className="date-picker-selects">
+            <label>
+              <span className="sr-only">{label} </span>Month
+              <select
+                aria-label={`${label} month`}
+                value={visibleMonth}
+                onChange={(event) => setVisibleMonth(event.target.value)}
+              >
+                {MONTH_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="sr-only">{label} </span>Year
+              <select
+                aria-label={`${label} year`}
+                value={visibleYear}
+                onChange={(event) => setVisibleYear(event.target.value)}
+              >
+                {yearOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="date-calendar-grid" role="grid" aria-label={`${label} calendar`}>
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((weekday) => (
+              <span className="weekday-label" key={weekday}>
+                {weekday}
+              </span>
+            ))}
+            {calendarDays.map((calendarDay, index) =>
+              calendarDay ? (
+                <button
+                  className={calendarDay === day && visibleMonth === month && visibleYear === year ? "is-selected" : undefined}
+                  key={`${visibleYear}-${visibleMonth}-${calendarDay}`}
+                  type="button"
+                  aria-label={`${label} ${visibleMonthLabel} ${Number(calendarDay)}, ${visibleYear}`}
+                  onClick={() => {
+                    onChange(buildLocalDateValue(visibleYear, visibleMonth, calendarDay));
+                    setIsOpen(false);
+                  }}
+                >
+                  {Number(calendarDay)}
+                </button>
+              ) : (
+                <span aria-hidden="true" key={`empty-${index}`} />
+              ),
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function FlowSteps({ activeStep }: { activeStep: number }) {
   return (
@@ -68,7 +282,7 @@ function ConnectRequiredPanel({
       {hasStatusError ? (
         <p className="error-text">Unable to confirm your Strava connection. You can retry by connecting again.</p>
       ) : null}
-      <button className="btn btn-primary" type="button" onClick={onConnect} disabled={isConnecting}>
+      <button className="btn btn-strava" type="button" onClick={onConnect} disabled={isConnecting} aria-busy={isConnecting}>
         {isConnecting ? "Connecting to Strava..." : "Connect with Strava"}
       </button>
     </section>
@@ -79,25 +293,31 @@ export default function DashboardPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
+  const defaultFilters = useMemo(() => getDefaultRecapFilters(), []);
+  const yearOptions = useMemo(() => getYearOptions(new Date()), []);
   const {
+    control,
     register,
     handleSubmit,
     reset,
     watch,
-    formState: { errors },
   } = useForm<RecapFormValues>({
     defaultValues: defaultFilters,
     mode: "onChange",
   });
   const selectedStartDate = watch("startDate");
   const selectedEndDate = watch("endDate");
+  const dateRangeValidation = validateRecapDateRange({
+    startDate: selectedStartDate,
+    endDate: selectedEndDate,
+  });
 
   const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
   const activitiesMutation = useMutation({ mutationFn: fetchActivities });
   const disconnectMutation = useMutation({
     mutationFn: disconnectStrava,
     onSuccess: (payload) => {
-      reset(defaultFilters);
+      reset(getDefaultRecapFilters());
       activitiesMutation.reset();
       queryClient.removeQueries({ queryKey: ["recap"] });
       queryClient.setQueryData(["strava-status"], {
@@ -115,10 +335,8 @@ export default function DashboardPage() {
     isError: statusQuery.isError,
     isTransitioning: isConnecting,
   });
-  const hasDateRangeError = Boolean(selectedStartDate && selectedEndDate && selectedEndDate < selectedStartDate);
-  const hasValidDateRange = Boolean(selectedStartDate && selectedEndDate && selectedEndDate >= selectedStartDate);
   const canUseBuilder = authState === "connected" && !disconnectMutation.isPending;
-  const canSubmitFilters = canUseBuilder && hasValidDateRange && !activitiesMutation.isPending;
+  const canSubmitFilters = canUseBuilder && dateRangeValidation.isValid && !activitiesMutation.isPending;
 
   function handleDisconnect() {
     const confirmed = window.confirm(
@@ -187,6 +405,10 @@ export default function DashboardPage() {
             <form
               className="filters-grid"
               onSubmit={handleSubmit(async (values) => {
+                if (!validateRecapDateRange(values).isValid) {
+                  return;
+                }
+
                 try {
                   await activitiesMutation.mutateAsync(values);
                 } catch {
@@ -195,28 +417,35 @@ export default function DashboardPage() {
               })}
             >
               <div className="field-row">
-                <label>
-                  Start date
-                  <input
-                    type="date"
-                    aria-invalid={errors.startDate ? "true" : "false"}
-                    {...register("startDate", { required: "Choose a start date." })}
-                  />
-                </label>
+                <Controller
+                  name="startDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="Start date"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      errorMessage={!dateRangeValidation.isValid ? dateRangeValidation.message ?? undefined : undefined}
+                      yearOptions={yearOptions}
+                    />
+                  )}
+                />
 
-                <label>
-                  End date
-                  <input
-                    type="date"
-                    min={selectedStartDate || undefined}
-                    aria-invalid={errors.endDate ? "true" : "false"}
-                    {...register("endDate", {
-                      required: "Choose an end date.",
-                      validate: (value) =>
-                        !selectedStartDate || !value || value >= selectedStartDate || "End date must be after start date.",
-                    })}
-                  />
-                </label>
+                <Controller
+                  name="endDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerField
+                      label="End date"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      errorMessage={!dateRangeValidation.isValid ? dateRangeValidation.message ?? undefined : undefined}
+                      yearOptions={yearOptions}
+                    />
+                  )}
+                />
               </div>
 
               <label>
@@ -230,10 +459,8 @@ export default function DashboardPage() {
                 </select>
               </label>
 
-              <p className={errors.startDate || errors.endDate || hasDateRangeError ? "error-text" : "helper-text"}>
-                {errors.startDate?.message ??
-                  errors.endDate?.message ??
-                  (hasDateRangeError ? "End date must be after start date." : null) ??
+              <p className={!dateRangeValidation.isValid ? "error-text" : "helper-text"}>
+                {dateRangeValidation.message ??
                   `Recap window: ${selectedStartDate || "start date"} to ${selectedEndDate || "end date"}.`}
               </p>
 
@@ -246,7 +473,13 @@ export default function DashboardPage() {
                   className="btn btn-primary"
                   type="button"
                   disabled={!canSubmitFilters}
-                  onClick={handleSubmit(navigateToRecap)}
+                  onClick={handleSubmit((values) => {
+                    if (!validateRecapDateRange(values).isValid) {
+                      return;
+                    }
+
+                    navigateToRecap(values);
+                  })}
                 >
                   Generate recap
                 </button>

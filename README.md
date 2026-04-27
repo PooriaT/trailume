@@ -14,6 +14,8 @@ MVP user flow:
 5. Add narrative text from Ollama when available (otherwise deterministic fallback).
 6. Disconnect from Strava when finished to clear the local session, tokens, filters, activity preview, and recap state.
 
+The recap builder defaults to a local-date window from exactly one year before today through today. Start and end dates each use a single date menu with direct month and year controls plus calendar day selection.
+
 ## Architecture summary
 
 Trailume is a monorepo with two runnable apps:

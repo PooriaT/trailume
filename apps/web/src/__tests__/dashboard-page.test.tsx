@@ -31,6 +31,18 @@ function renderPage() {
   );
 }
 
+function selectDate(label: "Start date" | "End date", value: string) {
+  const [year, month, day] = value.split("-");
+  const monthLabel = new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(undefined, {
+    month: "short",
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${label}:`) }));
+  fireEvent.change(screen.getByRole("combobox", { name: `${label} month` }), { target: { value: month } });
+  fireEvent.change(screen.getByRole("combobox", { name: `${label} year` }), { target: { value: year } });
+  fireEvent.click(screen.getByRole("button", { name: `${label} ${monthLabel} ${Number(day)}, ${year}` }));
+}
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,9 +65,9 @@ describe("DashboardPage", () => {
 
     renderPage();
 
-    await screen.findByLabelText("Start date");
-    fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-01-01" } });
-    fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-01-03" } });
+    await screen.findByRole("button", { name: /^Start date:/ });
+    selectDate("Start date", "2026-01-01");
+    selectDate("End date", "2026-01-03");
     fireEvent.change(screen.getByLabelText("Activity type"), { target: { value: "running" } });
     fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
 
@@ -83,9 +95,9 @@ describe("DashboardPage", () => {
   it("navigates to recap route with query params", async () => {
     renderPage();
 
-    await screen.findByLabelText("Start date");
-    fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-01-10" } });
-    fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-01-12" } });
+    await screen.findByRole("button", { name: /^Start date:/ });
+    selectDate("Start date", "2026-01-10");
+    selectDate("End date", "2026-01-12");
     fireEvent.change(screen.getByLabelText("Activity type"), { target: { value: "cycling" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate recap" }));
 
@@ -94,6 +106,43 @@ describe("DashboardPage", () => {
         "/recap?startDate=2026-01-10&endDate=2026-01-12&activityType=cycling",
       );
     });
+  });
+
+  it("allows historical Strava-era years in the date picker", async () => {
+    (fetchActivities as jest.Mock).mockResolvedValue({ activities: [], empty: true });
+
+    renderPage();
+
+    await screen.findByRole("button", { name: /^Start date:/ });
+    selectDate("Start date", "2009-07-01");
+    selectDate("End date", "2010-08-31");
+    fireEvent.click(screen.getByRole("button", { name: "Preview activities" }));
+
+    await waitFor(() => {
+      const calls = (fetchActivities as jest.Mock).mock.calls;
+      expect(calls.some(([arg]) => arg?.startDate === "2009-07-01" && arg?.endDate === "2010-08-31")).toBe(true);
+    });
+  });
+
+  it("disables generation and shows a clear error for an invalid date range", async () => {
+    renderPage();
+
+    await screen.findByRole("button", { name: /^Start date:/ });
+    selectDate("Start date", "2026-01-10");
+    selectDate("End date", "2026-01-09");
+
+    expect(screen.getByRole("button", { name: "Generate recap" })).toBeDisabled();
+    expect(screen.getByText("Start date must be on or before end date.")).toBeInTheDocument();
+  });
+
+  it("renders Strava connect as the primary orange CTA when disconnected", async () => {
+    (getStravaAuthStatus as jest.Mock).mockResolvedValue({ connected: false, athleteName: null });
+
+    renderPage();
+
+    const connectButton = await screen.findByRole("button", { name: "Connect with Strava" });
+    expect(connectButton).toHaveClass("btn-strava");
+    expect(connectButton).toBeEnabled();
   });
 
   it("confirms disconnect, clears auth state, and returns to landing", async () => {

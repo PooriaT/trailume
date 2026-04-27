@@ -43,7 +43,8 @@ export default function HomePage() {
             </Link>
           ) : (
             <button
-              className="btn btn-primary"
+              className="btn btn-strava"
+              aria-busy={isConnecting || authState === "connecting"}
               disabled={isConnecting || authState === "connecting"}
               onClick={() => {
                 setIsConnecting(true);
