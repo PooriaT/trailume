@@ -25,6 +25,11 @@ class StravaAthleteResponse(BaseModel):
     country: str | None = None
 
 
+class StravaActivityMap(BaseModel):
+    polyline: str | None = None
+    summary_polyline: str | None = None
+
+
 class StravaActivityResponse(BaseModel):
     id: int
     name: str
@@ -34,6 +39,32 @@ class StravaActivityResponse(BaseModel):
     moving_time: int | None = None
     elapsed_time: int | None = None
     total_elevation_gain: float | None = None
+    start_latlng: list[float] | None = None
+    end_latlng: list[float] | None = None
+    map: StravaActivityMap | None = None
+
+
+def _normalize_latlng(value: list[float] | None) -> tuple[float, float] | None:
+    if not value or len(value) != 2:
+        return None
+
+    lat = float(value[0])
+    lng = float(value[1])
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        return None
+    return (lat, lng)
+
+
+def _normalize_polyline(value: str | None) -> str | None:
+    if not value or not value.strip():
+        return None
+    return value.strip()
+
+
+def _normalize_map_polyline(value: StravaActivityMap | None) -> str | None:
+    if value is None:
+        return None
+    return _normalize_polyline(value.summary_polyline) or _normalize_polyline(value.polyline)
 
 
 class ActivityItem(BaseModel):
@@ -63,6 +94,9 @@ def normalize_activity(raw: StravaActivityResponse) -> Activity:
         elevation_gain_m=raw.total_elevation_gain or 0.0,
         moving_time_s=raw.moving_time,
         elapsed_time_s=raw.elapsed_time,
+        start_latlng=_normalize_latlng(raw.start_latlng),
+        end_latlng=_normalize_latlng(raw.end_latlng),
+        summary_polyline=_normalize_map_polyline(raw.map),
     )
 
 

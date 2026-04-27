@@ -233,12 +233,24 @@ Included:
 - Deterministic analytics output (summary metrics, highlights, trend series, standout activities, insight flags).
 - Narrative provider boundary with Ollama primary + deterministic fallback.
 - Recap UI rendering for generated payload sections.
+- Basic recap map rendering from normalized activity coordinates or Strava summary polylines when present.
 
 Not included:
 - Persistent token/session storage beyond process memory.
 - Background jobs or queued recap generation.
 - Production deployment hardening and multi-user account model.
-- Fully wired route geometry visualization.
+- Detailed Strava stream fetching or animated route/video generation.
+
+## Map approach
+
+Trailume uses a lightweight OpenStreetMap-compatible map MVP:
+
+- Backend Strava responses are normalized into Trailume activity models with optional start/end coordinates and summary polylines. Raw Strava map structures are not exposed to the frontend.
+- Recap responses include optional `mapData` only when at least one selected activity has usable route or coordinate data.
+- The web app renders maps with Leaflet/React Leaflet and OpenStreetMap tile URLs. Tests use mocked/demo map data and do not require live Strava or external map services.
+- If route polylines are unavailable, the map falls back to start/end markers. If no geographic data exists, the recap hides the map section.
+
+Current limitations: Trailume does not fetch detailed Strava streams yet, does not animate routes, and does not ask the narrative model to invent location claims. Future improvements can add stream fetching for selected activities, route simplification, repeated-route overlays, and provider-neutral map normalization for additional activity sources.
 
 ## Known limitations
 

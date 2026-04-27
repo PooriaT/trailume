@@ -27,6 +27,27 @@ export interface StandoutActivity {
   movingTimeS?: number | null;
 }
 
+export interface MapCoordinate {
+  lat: number;
+  lng: number;
+}
+
+export interface RecapMapActivity {
+  id: string;
+  name: string;
+  activityType: string;
+  distanceM: number;
+  elevationGainM: number;
+  startCoordinate?: MapCoordinate | null;
+  endCoordinate?: MapCoordinate | null;
+  summaryPolyline?: string | null;
+}
+
+export interface RecapMapData {
+  activities: RecapMapActivity[];
+  isDemoData: boolean;
+}
+
 export interface ActivityTypeTotals {
   activityCount: number;
   distanceM: number;
@@ -95,6 +116,7 @@ export interface RecapResponse {
   chartPoints: { date: string; distanceKm: number; activityCount: number }[];
   trendSeries: TrendPoint[];
   standoutActivities: StandoutActivity[];
+  mapData?: RecapMapData | null;
   insightFlags: InsightFlags;
   metadata: RecapMetadata;
 }

@@ -93,6 +93,7 @@ def test_recap_route_uses_mocked_services_and_returns_contract_shape(monkeypatch
                 chart_points=[],
                 trend_series=[],
                 standout_activities=[],
+                map_data=None,
                 insight_flags={
                     "hasFastestEffort": False,
                     "hasStrongFinish": False,

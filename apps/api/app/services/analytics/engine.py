@@ -322,6 +322,7 @@ class AnalyticsEngine:
             chart_points=chart_points,
             trend_series=trend_series,
             standout_activities=standout,
+            map_data=self._build_map_data(ordered_activities),
             insight_flags=insight_flags,
             metadata=metadata,
         )
@@ -363,6 +364,7 @@ class AnalyticsEngine:
                 for day in day_list
             ],
             standout_activities=[],
+            map_data=None,
             insight_flags={
                 "hasFastestEffort": False,
                 "hasStrongFinish": False,
@@ -430,6 +432,37 @@ class AnalyticsEngine:
         if repeat_count >= 3:
             return route
         return None
+
+    def _build_map_data(self, activities: list[Activity]) -> dict[str, object] | None:
+        map_activities = []
+        for activity in activities:
+            has_coordinates = activity.start_latlng is not None or activity.end_latlng is not None
+            has_polyline = bool(activity.summary_polyline)
+            if not has_coordinates and not has_polyline:
+                continue
+
+            map_activities.append(
+                {
+                    "id": activity.id,
+                    "name": activity.name,
+                    "activityType": activity.activity_type,
+                    "distanceM": round(activity.distance_m, 2),
+                    "elevationGainM": round(activity.elevation_gain_m, 2),
+                    "startCoordinate": self._coordinate_dict(activity.start_latlng),
+                    "endCoordinate": self._coordinate_dict(activity.end_latlng),
+                    "summaryPolyline": activity.summary_polyline,
+                }
+            )
+
+        if not map_activities:
+            return None
+
+        return {"activities": map_activities, "isDemoData": False}
+
+    def _coordinate_dict(self, value: tuple[float, float] | None) -> dict[str, float] | None:
+        if value is None:
+            return None
+        return {"lat": value[0], "lng": value[1]}
 
     def _normalize_name(self, name: str) -> str:
         lowered = "".join(ch.lower() if ch.isalpha() or ch.isspace() else " " for ch in name)
