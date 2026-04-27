@@ -27,15 +27,15 @@ p {
   margin: 0 auto;
   padding: 1.5rem;
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .panel {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  padding: 1.1rem;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
 }
 
 .panel-subtle {
@@ -109,6 +109,13 @@ p {
   color: #ffffff;
 }
 
+.btn-strava {
+  background: #e8590c;
+  color: #ffffff;
+  border-color: #d9480f;
+  box-shadow: 0 8px 18px rgba(232, 89, 12, 0.18);
+}
+
 .btn-ghost {
   background: #f8fafc;
   border-color: #cbd5e1;
@@ -130,6 +137,12 @@ p {
   background: #1d4ed8;
 }
 
+.btn-strava:hover:not(:disabled) {
+  background: #d9480f;
+  border-color: #c2410c;
+  box-shadow: 0 10px 22px rgba(232, 89, 12, 0.24);
+}
+
 .btn-ghost:hover:not(:disabled) {
   background: #f1f5f9;
   border-color: #94a3b8;
@@ -142,9 +155,16 @@ p {
 
 .btn:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+.date-menu-button:focus-visible,
+.icon-button:focus-visible,
+.date-calendar-grid button:focus-visible {
   outline: 3px solid rgba(37, 99, 235, 0.2);
   outline-offset: 2px;
+}
+
+.btn-strava:focus-visible {
+  outline-color: rgba(232, 89, 12, 0.28);
 }
 
 .cta-row {
@@ -254,7 +274,7 @@ select:focus-visible {
 
 .filters-grid {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.9rem;
   margin-top: 1rem;
 }
 
@@ -265,10 +285,133 @@ label {
   color: #334155;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .field-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
+}
+
+.date-picker-field {
+  position: relative;
+}
+
+.date-menu-button {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.55rem;
+}
+
+.date-menu-button:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.date-menu-button[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.date-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  width: min(20rem, calc(100vw - 3rem));
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
+}
+
+.date-popover-header,
+.date-picker-selects {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-popover-header strong {
+  text-align: center;
+}
+
+.date-picker-selects {
+  grid-template-columns: 1fr 1fr;
+}
+
+.icon-button {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 8px;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  cursor: pointer;
+  color: #334155;
+  font: inherit;
+  font-weight: 700;
+}
+
+.icon-button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.date-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.weekday-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.date-calendar-grid button {
+  border: 1px solid transparent;
+  background: #ffffff;
+  border-radius: 8px;
+  min-height: 2.15rem;
+  cursor: pointer;
+  color: #1e293b;
+  font: inherit;
+}
+
+.date-calendar-grid button:hover {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.date-calendar-grid button.is-selected {
+  background: #e8590c;
+  border-color: #d9480f;
+  color: #ffffff;
+  font-weight: 700;
 }
 
 input,
@@ -281,6 +424,10 @@ select {
 }
 
 input[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+select[aria-invalid="true"] {
   border-color: #dc2626;
 }
 
