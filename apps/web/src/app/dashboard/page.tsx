@@ -267,23 +267,33 @@ function ConnectRequiredPanel({
   isConnecting,
   onConnect,
   hasStatusError,
+  isMissingActivityAccess = false,
 }: {
   isConnecting: boolean;
   onConnect: () => void;
   hasStatusError: boolean;
+  isMissingActivityAccess?: boolean;
 }) {
   return (
     <section className="panel connection-panel">
       <p className="eyebrow">Step 1</p>
-      <h1>Connect Strava to build a recap</h1>
+      <h1>{isMissingActivityAccess ? "Reconnect with activity access" : "Connect Strava to build a recap"}</h1>
       <p className="hero-summary">
-        Trailume needs your Strava activities before it can filter a date range, find highlights, and write the story.
+        {isMissingActivityAccess
+          ? "Trailume is connected to Strava, but it needs activity read access before it can generate stories."
+          : "Trailume needs your Strava activities before it can filter a date range, find highlights, and write the story."}
       </p>
+      {isMissingActivityAccess ? (
+        <div className="permission-note" role="status">
+          <strong>Activity access is required.</strong>
+          <span>Private activity access is optional and only includes activities marked Only You.</span>
+        </div>
+      ) : null}
       {hasStatusError ? (
         <p className="error-text">Unable to confirm your Strava connection. You can retry by connecting again.</p>
       ) : null}
       <button className="btn btn-strava" type="button" onClick={onConnect} disabled={isConnecting} aria-busy={isConnecting}>
-        {isConnecting ? "Connecting to Strava..." : "Connect with Strava"}
+        {isConnecting ? "Connecting to Strava..." : isMissingActivityAccess ? "Reconnect with Strava" : "Connect with Strava"}
       </button>
     </section>
   );
@@ -324,6 +334,12 @@ export default function DashboardPage() {
         connected: false,
         provider: "strava",
         athleteName: null,
+        activityAccess: "missing",
+        permissions: {
+          hasProfileRead: false,
+          hasActivityRead: false,
+          hasPrivateActivityRead: false,
+        },
       });
       window.sessionStorage.setItem("trailume:auth-message", payload.message);
       router.push("/");
@@ -331,11 +347,13 @@ export default function DashboardPage() {
   });
   const authState = getAuthState({
     connected: statusQuery.data?.connected,
+    activityAccess: statusQuery.data?.activityAccess,
     isLoading: statusQuery.isLoading,
     isError: statusQuery.isError,
     isTransitioning: isConnecting,
   });
-  const canUseBuilder = authState === "connected" && !disconnectMutation.isPending;
+  const hasActivityAccess = authState === "connected-standard" || authState === "connected-private";
+  const canUseBuilder = hasActivityAccess && !disconnectMutation.isPending;
   const canSubmitFilters = canUseBuilder && dateRangeValidation.isValid && !activitiesMutation.isPending;
 
   function handleDisconnect() {
@@ -368,11 +386,12 @@ export default function DashboardPage() {
 
       {authState === "connecting" && !statusQuery.data?.connected ? <BuilderSkeleton /> : null}
 
-      {authState === "not-connected" || authState === "error" ? (
+      {authState === "not-connected" || authState === "error" || authState === "missing-activity-access" ? (
         <ConnectRequiredPanel
           isConnecting={isConnecting}
           onConnect={handleConnect}
           hasStatusError={authState === "error"}
+          isMissingActivityAccess={authState === "missing-activity-access"}
         />
       ) : null}
 
@@ -393,7 +412,15 @@ export default function DashboardPage() {
                 {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect from Strava"}
               </button>
             </div>
-            <p className="muted">Connected as {statusQuery.data?.athleteName ?? "your account"}.</p>
+            <p className="muted">
+              Connected as {statusQuery.data?.athleteName ?? "your account"} with{" "}
+              {authState === "connected-private" ? "private activity access" : "standard activity access"}.
+            </p>
+            {authState === "connected-standard" ? (
+              <p className="permission-note subtle">
+                Private activities are not included because private activity access was not granted.
+              </p>
+            ) : null}
             {disconnectMutation.isError ? (
               <p className="error-text">
                 {disconnectMutation.error instanceof ApiError

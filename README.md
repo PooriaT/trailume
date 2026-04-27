@@ -157,7 +157,10 @@ Session cookie behavior:
    - `STRAVA_REDIRECT_URI=http://localhost:8000/api/v1/auth/strava/callback`
 4. Make sure `apps/api/.env` no longer contains the example placeholders `your_client_id` or `your_client_secret`.
 5. Start Trailume and use **Connect with Strava** from the home page.
-6. On Strava's authorization screen, approve activity access. Trailume requires the `activity:read_all` scope to preview activities.
+6. On Strava's authorization screen, approve activity access. Trailume requests `read`, `activity:read`, and optional `activity:read_all`.
+   - Required: `activity:read`, which lets Trailume read activities visible to Everyone or Followers.
+   - Optional: `activity:read_all`, which also includes activities visible only to you.
+   - Profile-only access (`read`) is not enough to fetch activities. If activity access is missing, Trailume shows a reconnect prompt instead of loading a raw API error.
 7. Use **Disconnect from Strava** in the recap builder to clear the MVP auth session and return to the pre-auth landing state.
 
 ## Ollama setup

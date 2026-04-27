@@ -18,7 +18,7 @@ If Ollama is unavailable or returns invalid output, fallback generation is used 
 - `STRAVA_REDIRECT_URI` (default: `http://localhost:8000/api/v1/auth/strava/callback`)
 - `WEB_APP_URL` (default: `http://localhost:3000`)
 
-When connecting Strava, approve activity access on the authorization screen. Activity preview requires the `activity:read_all` OAuth scope.
+When connecting Strava, approve activity access on the authorization screen. Trailume requests `read`, `activity:read`, and optional `activity:read_all`. Activity preview and recap generation require `activity:read` or `activity:read_all`; `activity:read_all` is only needed to include activities marked Only You.
 
 ### Ollama configuration
 

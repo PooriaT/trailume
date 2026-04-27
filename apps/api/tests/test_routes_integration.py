@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models.domain import Activity, InsightBundle
 from app.services.narrative.models import NarrativeOutput
+from app.services.strava.permissions import StravaPermissions
 from app.services.strava.token_store import StravaSession, StravaTokenSet
 
 client = TestClient(app)
@@ -22,6 +23,7 @@ def _session() -> tuple[str, StravaSession]:
             ),
             athlete_id=123,
             athlete_name="Rider",
+            permissions=StravaPermissions.from_scope_string("read,activity:read"),
         ),
     )
 
@@ -47,7 +49,9 @@ def test_activities_route_returns_mapped_payload_without_external_calls(monkeypa
                 )
             ]
 
-    monkeypatch.setattr("app.api.routes.activities.get_strava_session_or_401", lambda request: _session())
+    monkeypatch.setattr(
+        "app.api.routes.activities.get_strava_activity_session_or_error", lambda request: _session()
+    )
     monkeypatch.setattr("app.api.routes.activities.StravaService", FakeStravaService)
 
     response = client.get(
@@ -119,7 +123,9 @@ def test_recap_route_uses_mocked_services_and_returns_contract_shape(monkeypatch
                 source="fallback",
             )
 
-    monkeypatch.setattr("app.api.routes.recaps.get_strava_session_or_401", lambda request: _session())
+    monkeypatch.setattr(
+        "app.api.routes.recaps.get_strava_activity_session_or_error", lambda request: _session()
+    )
     monkeypatch.setattr("app.api.routes.recaps.StravaService", FakeStravaService)
     monkeypatch.setattr("app.api.routes.recaps.AnalyticsEngine", FakeAnalyticsEngine)
     monkeypatch.setattr("app.api.routes.recaps.NarrativeService", FakeNarrativeService)

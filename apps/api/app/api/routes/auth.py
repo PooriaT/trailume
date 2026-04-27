@@ -1,10 +1,9 @@
 from secrets import token_urlsafe
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse
 
-from app.api.errors import strava_http_exception
 from app.api.session import SESSION_COOKIE_NAME
 from app.core.config import settings
 from app.models.contracts import (
@@ -13,6 +12,7 @@ from app.models.contracts import (
     StravaDisconnectResponse,
 )
 from app.services.strava.client import StravaAPIError, StravaService
+from app.services.strava.permissions import StravaPermissions
 from app.services.strava.token_store import strava_token_store
 
 router = APIRouter(tags=["auth"])
@@ -49,6 +49,18 @@ def _validated_return_url(return_to: str | None) -> str:
         return candidate_origin
 
     return settings.web_app_url
+
+
+def _permission_payload(permissions: StravaPermissions) -> dict:
+    return {
+        "hasProfileRead": permissions.has_profile_read,
+        "hasActivityRead": permissions.has_activity_read,
+        "hasPrivateActivityRead": permissions.has_private_activity_read,
+    }
+
+
+def _dashboard_redirect_url(return_url: str, params: dict[str, str]) -> str:
+    return f"{return_url}/dashboard?{urlencode(params)}"
 
 
 @router.get("/auth/strava/login")
@@ -103,36 +115,47 @@ def strava_auth_callback(
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
 
     service = StravaService()
-    if not service.has_required_activity_scope(scope):
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Strava activity read permission was not granted. "
-                "Reconnect with Strava and approve activity access."
-            ),
-        )
+    permissions = service.parse_permissions(scope)
+    return_url = session.return_url or settings.web_app_url
 
     try:
         tokens = service.exchange_authorization_code(code)
-        athlete = service.fetch_athlete_profile(tokens.access_token)
-    except StravaAPIError as exc:
-        raise strava_http_exception(exc) from exc
+    except StravaAPIError:
+        return RedirectResponse(
+            url=_dashboard_redirect_url(
+                return_url,
+                {"authError": "strava_connection_failed"},
+            )
+        )
 
-    athlete_name = (
-        " ".join(filter(None, [athlete.firstname, athlete.lastname])).strip() or athlete.username
-    )
+    athlete = None
+    if permissions.has_profile_read:
+        try:
+            athlete = service.fetch_athlete_profile(tokens.access_token)
+        except StravaAPIError:
+            athlete = None
+
+    athlete_name = None
+    if athlete:
+        athlete_name = (
+            " ".join(filter(None, [athlete.firstname, athlete.lastname])).strip() or athlete.username
+        )
 
     strava_token_store.set_tokens(
         session_id,
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
         expires_at=tokens.expires_at,
-        athlete_id=athlete.id,
+        athlete_id=athlete.id if athlete else None,
         athlete_name=athlete_name,
+        permissions=permissions,
     )
 
-    return_url = session.return_url or settings.web_app_url
-    return RedirectResponse(url=f"{return_url}/dashboard?connected=strava")
+    params = {"connected": "strava", "activityAccess": permissions.activity_access}
+    if not permissions.has_activity_read:
+        params["authError"] = "activity_access_missing"
+
+    return RedirectResponse(url=_dashboard_redirect_url(return_url, params))
 
 
 @router.get("/auth/strava/status", response_model=StravaAuthStatusResponse)
@@ -143,7 +166,12 @@ def strava_auth_status(request: Request) -> StravaAuthStatusResponse:
     session = strava_token_store.get_session(session_id)
     if not session or not session.tokens:
         return StravaAuthStatusResponse(connected=False)
-    return StravaAuthStatusResponse(connected=True, athleteName=session.athlete_name)
+    return StravaAuthStatusResponse(
+        connected=True,
+        athleteName=session.athlete_name,
+        activityAccess=session.permissions.activity_access,
+        permissions=_permission_payload(session.permissions),
+    )
 
 
 @router.post("/auth/strava/disconnect", response_model=StravaDisconnectResponse)

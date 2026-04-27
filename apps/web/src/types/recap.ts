@@ -103,6 +103,12 @@ export interface StravaAuthStatus {
   connected: boolean;
   provider: "strava";
   athleteName?: string | null;
+  activityAccess: "missing" | "standard" | "private";
+  permissions: {
+    hasProfileRead: boolean;
+    hasActivityRead: boolean;
+    hasPrivateActivityRead: boolean;
+  };
 }
 
 export interface StravaDisconnectResponse {

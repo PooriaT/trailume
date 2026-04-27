@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Query, Request
 
 from app.api.errors import strava_http_exception
-from app.api.session import get_strava_session_or_401
+from app.api.session import get_strava_activity_session_or_error
 from app.models.contracts import ActivitiesListResponse
 from app.services.strava.client import StravaAPIError, StravaService
 from app.services.strava.token_store import strava_token_store
@@ -18,7 +18,7 @@ def get_activities(
     end: datetime = Query(...),
     type: str = Query(default="all"),
 ) -> ActivitiesListResponse:
-    session_id, session = get_strava_session_or_401(request)
+    session_id, session = get_strava_activity_session_or_error(request)
     service = StravaService()
 
     try:

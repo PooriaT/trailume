@@ -4,12 +4,32 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 ActivityType = Literal["all", "cycling", "running", "swimming"]
+ActivityAccess = Literal["missing", "standard", "private"]
+
+
+class StravaPermissionCapabilities(BaseModel):
+    has_profile_read: bool = Field(alias="hasProfileRead")
+    has_activity_read: bool = Field(alias="hasActivityRead")
+    has_private_activity_read: bool = Field(alias="hasPrivateActivityRead")
+
+
+class ApiErrorDetail(BaseModel):
+    code: str
+    message: str
 
 
 class StravaAuthStatusResponse(BaseModel):
     connected: bool
     provider: str = "strava"
     athlete_name: str | None = Field(default=None, alias="athleteName")
+    activity_access: ActivityAccess = Field(default="missing", alias="activityAccess")
+    permissions: StravaPermissionCapabilities = Field(
+        default_factory=lambda: StravaPermissionCapabilities(
+            hasProfileRead=False,
+            hasActivityRead=False,
+            hasPrivateActivityRead=False,
+        )
+    )
 
 
 class StravaAuthCallbackResponse(BaseModel):

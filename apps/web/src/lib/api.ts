@@ -13,6 +13,7 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly detail?: string,
+    public readonly code?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -26,10 +27,16 @@ export function getStravaLoginUrl(returnTo?: string) {
 
 async function parseErrorResponse(res: Response, fallbackMessage: string): Promise<ApiError> {
   let detail: string | undefined;
+  let code: string | undefined;
 
   try {
-    const payload = (await res.json()) as { detail?: string };
-    detail = payload?.detail;
+    const payload = (await res.json()) as { detail?: string | { message?: string; code?: string } };
+    if (typeof payload?.detail === "string") {
+      detail = payload.detail;
+    } else {
+      detail = payload?.detail?.message;
+      code = payload?.detail?.code;
+    }
   } catch {
     try {
       const text = await res.text();
@@ -39,7 +46,7 @@ async function parseErrorResponse(res: Response, fallbackMessage: string): Promi
     }
   }
 
-  return new ApiError(detail ?? fallbackMessage, res.status, detail);
+  return new ApiError(detail ?? fallbackMessage, res.status, detail, code);
 }
 
 async function apiFetch<T>(input: string, init: RequestInit, fallbackMessage: string): Promise<T> {

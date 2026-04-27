@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+
+from app.services.strava.permissions import StravaPermissions
 
 
 @dataclass
@@ -16,6 +18,7 @@ class StravaSession:
     tokens: StravaTokenSet | None = None
     athlete_id: int | None = None
     athlete_name: str | None = None
+    permissions: StravaPermissions = field(default_factory=StravaPermissions)
 
 
 class InMemoryStravaTokenStore:
@@ -37,6 +40,7 @@ class InMemoryStravaTokenStore:
         expires_at: int,
         athlete_id: int | None,
         athlete_name: str | None,
+        permissions: StravaPermissions | None = None,
     ) -> None:
         session = self._sessions.get(session_id)
         if session is None:
@@ -48,6 +52,7 @@ class InMemoryStravaTokenStore:
         )
         session.athlete_id = athlete_id
         session.athlete_name = athlete_name
+        session.permissions = permissions or StravaPermissions()
 
     def update_tokens(self, session_id: str, token_set: StravaTokenSet) -> None:
         session = self._sessions.get(session_id)

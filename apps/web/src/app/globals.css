@@ -76,6 +76,23 @@ p {
   font-weight: 600;
 }
 
+.permission-note {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.permission-note.subtle {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+}
+
 .section-heading-row {
   display: flex;
   justify-content: space-between;

@@ -47,7 +47,16 @@ describe("DashboardPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     window.sessionStorage.clear();
-    (getStravaAuthStatus as jest.Mock).mockResolvedValue({ connected: true, athleteName: "Casey" });
+    (getStravaAuthStatus as jest.Mock).mockResolvedValue({
+      connected: true,
+      athleteName: "Casey",
+      activityAccess: "standard",
+      permissions: {
+        hasProfileRead: true,
+        hasActivityRead: true,
+        hasPrivateActivityRead: false,
+      },
+    });
     (disconnectStrava as jest.Mock).mockResolvedValue({
       connected: false,
       provider: "strava",
@@ -136,13 +145,52 @@ describe("DashboardPage", () => {
   });
 
   it("renders Strava connect as the primary orange CTA when disconnected", async () => {
-    (getStravaAuthStatus as jest.Mock).mockResolvedValue({ connected: false, athleteName: null });
+    (getStravaAuthStatus as jest.Mock).mockResolvedValue({
+      connected: false,
+      athleteName: null,
+      activityAccess: "missing",
+      permissions: {
+        hasProfileRead: false,
+        hasActivityRead: false,
+        hasPrivateActivityRead: false,
+      },
+    });
 
     renderPage();
 
     const connectButton = await screen.findByRole("button", { name: "Connect with Strava" });
     expect(connectButton).toHaveClass("btn-strava");
     expect(connectButton).toBeEnabled();
+  });
+
+  it("shows reconnect guidance when Strava activity access is missing", async () => {
+    (getStravaAuthStatus as jest.Mock).mockResolvedValue({
+      connected: true,
+      athleteName: "Casey",
+      activityAccess: "missing",
+      permissions: {
+        hasProfileRead: true,
+        hasActivityRead: false,
+        hasPrivateActivityRead: false,
+      },
+    });
+
+    renderPage();
+
+    expect(await screen.findByRole("heading", { name: "Reconnect with activity access" })).toBeInTheDocument();
+    expect(screen.getByText("Activity access is required.")).toBeInTheDocument();
+    expect(screen.getByText("Private activity access is optional and only includes activities marked Only You.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reconnect with Strava" })).toBeEnabled();
+  });
+
+  it("allows standard activity access and shows private activity note", async () => {
+    renderPage();
+
+    expect(await screen.findByText("Connected as Casey with standard activity access.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Private activities are not included because private activity access was not granted."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate recap" })).toBeEnabled();
   });
 
   it("confirms disconnect, clears auth state, and returns to landing", async () => {

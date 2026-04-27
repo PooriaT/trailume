@@ -1,7 +1,14 @@
-export type AuthState = "not-connected" | "connecting" | "connected" | "error";
+export type AuthState =
+  | "not-connected"
+  | "connecting"
+  | "connected-standard"
+  | "connected-private"
+  | "missing-activity-access"
+  | "error";
 
 type AuthStateInput = {
   connected?: boolean;
+  activityAccess?: "missing" | "standard" | "private";
   isLoading: boolean;
   isError: boolean;
   isTransitioning?: boolean;
@@ -11,6 +18,7 @@ type AuthStateInput = {
 // Disconnect returns the app to "not-connected" by clearing cached auth, recap, and activity state.
 export function getAuthState({
   connected,
+  activityAccess,
   isLoading,
   isError,
   isTransitioning = false,
@@ -23,5 +31,17 @@ export function getAuthState({
     return "error";
   }
 
-  return connected ? "connected" : "not-connected";
+  if (!connected) {
+    return "not-connected";
+  }
+
+  if (activityAccess === "private") {
+    return "connected-private";
+  }
+
+  if (activityAccess === "standard") {
+    return "connected-standard";
+  }
+
+  return "missing-activity-access";
 }

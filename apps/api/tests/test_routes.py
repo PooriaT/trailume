@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.api.session import SESSION_COOKIE_NAME
 from app.main import app
+from app.services.strava.permissions import StravaPermissions
 from app.services.strava.token_store import strava_token_store
 
 
@@ -77,8 +78,8 @@ def test_strava_callback_redirects_to_session_return_url(monkeypatch) -> None:
     strava_token_store.create_pending_session(session_id, "state", "http://localhost:3001")
 
     class FakeStravaService:
-        def has_required_activity_scope(self, scope):
-            return scope == "activity:read_all"
+        def parse_permissions(self, scope):
+            return StravaPermissions.from_scope_string(scope)
 
         def exchange_authorization_code(self, code):
             assert code == "code"
@@ -97,12 +98,110 @@ def test_strava_callback_redirects_to_session_return_url(monkeypatch) -> None:
     test_client = TestClient(app)
     test_client.cookies.set(SESSION_COOKIE_NAME, session_id)
     response = test_client.get(
-        "/api/v1/auth/strava/callback?code=code&state=state&scope=activity:read_all",
+        "/api/v1/auth/strava/callback?code=code&state=state&scope=activity:read",
         follow_redirects=False,
     )
 
     assert response.status_code == 307
-    assert response.headers["location"] == "http://localhost:3001/dashboard?connected=strava"
+    assert response.headers["location"] == (
+        "http://localhost:3001/dashboard?connected=strava&activityAccess=standard"
+    )
+
+
+def test_strava_callback_allows_private_activity_scope(monkeypatch) -> None:
+    session_id = "callback-private-session"
+    strava_token_store.create_pending_session(session_id, "state", "http://localhost:3001")
+
+    class FakeStravaService:
+        def parse_permissions(self, scope):
+            return StravaPermissions.from_scope_string(scope)
+
+        def exchange_authorization_code(self, code):
+            return SimpleNamespace(
+                access_token="access",
+                refresh_token="refresh",
+                expires_at=2_000_000_000,
+            )
+
+        def fetch_athlete_profile(self, access_token):
+            return SimpleNamespace(id=123, firstname="Casey", lastname="Rider", username="casey")
+
+    monkeypatch.setattr("app.api.routes.auth.StravaService", FakeStravaService)
+
+    test_client = TestClient(app)
+    test_client.cookies.set(SESSION_COOKIE_NAME, session_id)
+    response = test_client.get(
+        "/api/v1/auth/strava/callback?code=code&state=state&scope=read%20activity:read_all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == (
+        "http://localhost:3001/dashboard?connected=strava&activityAccess=private"
+    )
+    session = strava_token_store.get_session(session_id)
+    assert session is not None
+    assert session.permissions.has_private_activity_read is True
+
+
+def test_strava_callback_stores_missing_activity_scope_without_failing(monkeypatch) -> None:
+    session_id = "callback-missing-activity-session"
+    strava_token_store.create_pending_session(session_id, "state", "http://localhost:3001")
+
+    class FakeStravaService:
+        def parse_permissions(self, scope):
+            return StravaPermissions.from_scope_string(scope)
+
+        def exchange_authorization_code(self, code):
+            return SimpleNamespace(
+                access_token="access",
+                refresh_token="refresh",
+                expires_at=2_000_000_000,
+            )
+
+        def fetch_athlete_profile(self, access_token):
+            return SimpleNamespace(id=123, firstname="Casey", lastname="Rider", username="casey")
+
+    monkeypatch.setattr("app.api.routes.auth.StravaService", FakeStravaService)
+
+    test_client = TestClient(app)
+    test_client.cookies.set(SESSION_COOKIE_NAME, session_id)
+    response = test_client.get(
+        "/api/v1/auth/strava/callback?code=code&state=state&scope=read",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == (
+        "http://localhost:3001/dashboard?connected=strava&activityAccess=missing"
+        "&authError=activity_access_missing"
+    )
+    session = strava_token_store.get_session(session_id)
+    assert session is not None
+    assert session.permissions.has_activity_read is False
+
+
+def test_activity_fetch_without_activity_scope_returns_structured_permission_error() -> None:
+    session_id = "missing-activity-fetch-session"
+    strava_token_store.create_pending_session(session_id, "state")
+    strava_token_store.set_tokens(
+        session_id,
+        access_token="access",
+        refresh_token="refresh",
+        expires_at=2_000_000_000,
+        athlete_id=123,
+        athlete_name="Casey",
+        permissions=StravaPermissions.from_scope_string("read"),
+    )
+
+    test_client = TestClient(app)
+    test_client.cookies.set(SESSION_COOKIE_NAME, session_id)
+    response = test_client.get(
+        "/api/v1/activities?start=2026-01-01T00:00:00Z&end=2026-01-31T23:59:59Z&type=all"
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"]["code"] == "STRAVA_ACTIVITY_PERMISSION_MISSING"
 
 
 def test_validated_return_url_preserves_configured_path_for_same_origin(monkeypatch) -> None:
