@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo } from "react";
 import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 import type { LatLngBoundsExpression, LatLngExpression } from "leaflet";
 import type { RecapMapActivity, MapCoordinate } from "@/types/recap";
+import { decodePolyline } from "@/lib/map-polyline";
 
 const ROUTE_COLORS = ["#2563eb", "#16a34a", "#dc2626", "#7c3aed", "#0891b2"];
 
@@ -20,51 +21,6 @@ function isValidCoordinate(point: MapCoordinate | null | undefined): point is Ma
 
 function toLatLng(point: MapCoordinate): LatLngExpression {
   return [point.lat, point.lng];
-}
-
-function decodePolyline(encoded: string | null | undefined): LatLngExpression[] {
-  if (!encoded) {
-    return [];
-  }
-
-  const points: LatLngExpression[] = [];
-  let index = 0;
-  let lat = 0;
-  let lng = 0;
-
-  try {
-    while (index < encoded.length) {
-      let result = 0;
-      let shift = 0;
-      let byte: number;
-
-      do {
-        byte = encoded.charCodeAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-
-      lat += result & 1 ? ~(result >> 1) : result >> 1;
-      result = 0;
-      shift = 0;
-
-      do {
-        byte = encoded.charCodeAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-
-      lng += result & 1 ? ~(result >> 1) : result >> 1;
-      const point = { lat: lat / 1e5, lng: lng / 1e5 };
-      if (isValidCoordinate(point)) {
-        points.push(toLatLng(point));
-      }
-    }
-  } catch {
-    return [];
-  }
-
-  return points;
 }
 
 function FitMapToPoints({ points }: { points: LatLngExpression[] }) {
