@@ -266,12 +266,18 @@ function BuilderSkeleton() {
 function ConnectRequiredPanel({
   isConnecting,
   onConnect,
+  onDisconnect,
+  isDisconnecting,
   hasStatusError,
+  disconnectErrorMessage,
   isMissingActivityAccess = false,
 }: {
   isConnecting: boolean;
   onConnect: () => void;
+  onDisconnect: () => void;
+  isDisconnecting: boolean;
   hasStatusError: boolean;
+  disconnectErrorMessage?: string;
   isMissingActivityAccess?: boolean;
 }) {
   return (
@@ -292,9 +298,17 @@ function ConnectRequiredPanel({
       {hasStatusError ? (
         <p className="error-text">Unable to confirm your Strava connection. You can retry by connecting again.</p>
       ) : null}
-      <button className="btn btn-strava" type="button" onClick={onConnect} disabled={isConnecting} aria-busy={isConnecting}>
-        {isConnecting ? "Connecting to Strava..." : isMissingActivityAccess ? "Reconnect with Strava" : "Connect with Strava"}
-      </button>
+      <div className="section-heading-row">
+        <button className="btn btn-strava" type="button" onClick={onConnect} disabled={isConnecting} aria-busy={isConnecting}>
+          {isConnecting ? "Connecting to Strava..." : isMissingActivityAccess ? "Reconnect with Strava" : "Connect with Strava"}
+        </button>
+        {isMissingActivityAccess ? (
+          <button className="btn btn-danger" type="button" onClick={onDisconnect} disabled={isDisconnecting}>
+            {isDisconnecting ? "Disconnecting..." : "Disconnect from Strava"}
+          </button>
+        ) : null}
+      </div>
+      {isMissingActivityAccess && disconnectErrorMessage ? <p className="error-text">{disconnectErrorMessage}</p> : null}
     </section>
   );
 }
@@ -390,7 +404,16 @@ export default function DashboardPage() {
         <ConnectRequiredPanel
           isConnecting={isConnecting}
           onConnect={handleConnect}
+          onDisconnect={handleDisconnect}
+          isDisconnecting={disconnectMutation.isPending}
           hasStatusError={authState === "error"}
+          disconnectErrorMessage={
+            disconnectMutation.isError
+              ? disconnectMutation.error instanceof ApiError
+                ? disconnectMutation.error.message
+                : "Unable to disconnect from Strava. Your current screen has not been reset."
+              : undefined
+          }
           isMissingActivityAccess={authState === "missing-activity-access"}
         />
       ) : null}
