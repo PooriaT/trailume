@@ -3,7 +3,7 @@ from datetime import datetime, time
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.errors import strava_http_exception
-from app.api.session import get_strava_session_or_401
+from app.api.session import get_strava_activity_session_or_error
 from app.models.contracts import RecapGenerateRequest, RecapGenerateResponse
 from app.services.analytics.engine import AnalyticsEngine
 from app.services.narrative.models import NarrativeInput
@@ -19,7 +19,7 @@ def generate_recap(request: Request, payload: RecapGenerateRequest) -> RecapGene
     if payload.end_date < payload.start_date:
         raise HTTPException(status_code=400, detail="endDate must be on or after startDate")
 
-    session_id, session = get_strava_session_or_401(request)
+    session_id, session = get_strava_activity_session_or_error(request)
 
     strava_service = StravaService()
     analytics = AnalyticsEngine()

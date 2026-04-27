@@ -39,8 +39,14 @@ def test_authorization_url_forces_activity_scope(monkeypatch: pytest.MonkeyPatch
     params = parse_qs(parsed.query)
 
     assert params["approval_prompt"] == ["force"]
-    assert params["scope"] == ["read,activity:read_all"]
+    assert params["scope"] == ["read,activity:read,activity:read_all"]
     assert params["state"] == ["state"]
+
+
+def test_required_activity_scope_accepts_activity_read() -> None:
+    service = StravaService()
+
+    assert service.has_required_activity_scope("read,activity:read") is True
 
 
 def test_required_activity_scope_accepts_activity_read_all() -> None:
@@ -53,6 +59,19 @@ def test_required_activity_scope_rejects_read_only() -> None:
     service = StravaService()
 
     assert service.has_required_activity_scope("read") is False
+
+
+def test_scope_parsing_supports_comma_and_space_separators() -> None:
+    service = StravaService()
+
+    comma_permissions = service.parse_permissions("read,activity:read")
+    space_permissions = service.parse_permissions("read activity:read_all")
+
+    assert comma_permissions.has_profile_read is True
+    assert comma_permissions.has_activity_read is True
+    assert comma_permissions.has_private_activity_read is False
+    assert space_permissions.has_activity_read is True
+    assert space_permissions.has_private_activity_read is True
 
 
 def test_to_unix_utc_preserves_original_offset() -> None:

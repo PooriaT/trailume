@@ -12,10 +12,12 @@ export default function HomePage() {
   const statusQuery = useQuery({ queryKey: ["strava-status"], queryFn: getStravaAuthStatus });
   const authState = getAuthState({
     connected: statusQuery.data?.connected,
+    activityAccess: statusQuery.data?.activityAccess,
     isLoading: statusQuery.isLoading,
     isError: statusQuery.isError,
     isTransitioning: isConnecting,
   });
+  const hasActivityAccess = authState === "connected-standard" || authState === "connected-private";
 
   useEffect(() => {
     const message = window.sessionStorage.getItem("trailume:auth-message");
@@ -37,7 +39,7 @@ export default function HomePage() {
         </p>
 
         <div className="cta-row">
-          {authState === "connected" ? (
+          {hasActivityAccess ? (
             <Link className="btn btn-primary" href="/dashboard">
               Build your recap
             </Link>
@@ -58,11 +60,14 @@ export default function HomePage() {
 
         {statusMessage ? <p className="success-text">{statusMessage}</p> : null}
         <p className="status-line">
-          {authState === "connected"
+          {hasActivityAccess
             ? `Connected as ${statusQuery.data?.athleteName ?? "your account"}.`
             : null}
           {authState === "connecting" ? "Checking Strava connection..." : null}
           {authState === "not-connected" ? "Start by connecting Strava. Filters and recaps appear after connection." : null}
+          {authState === "missing-activity-access"
+            ? "Connected to Strava, but activity access is still needed to build recaps."
+            : null}
           {authState === "error" ? "Unable to load auth status right now." : null}
         </p>
       </section>

@@ -61,6 +61,12 @@ Responsibilities inside this boundary:
 
 Everything outside this boundary should consume normalized models and remain provider-agnostic.
 
+Strava OAuth scope behavior:
+- Trailume requests `read`, `activity:read`, and optional `activity:read_all`.
+- `activity:read` is the required MVP activity capability and supports activities visible to Everyone or Followers.
+- `activity:read_all` adds activities visible only to the athlete. Missing private activity access is not fatal; the UI notes that private activities are not included.
+- If neither activity scope is granted, activity preview and recap generation return a structured permission error and the frontend prompts the user to reconnect.
+
 Current MVP storage note:
 - Token/session state is currently in-memory (`token_store`), not durable.
 

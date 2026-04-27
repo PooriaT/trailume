@@ -57,6 +57,30 @@ describe("api client", () => {
     );
   });
 
+  it("raises ApiError with structured backend permission message", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      mockJsonResponse(
+        {
+          detail: {
+            code: "STRAVA_ACTIVITY_PERMISSION_MISSING",
+            message: "Trailume needs Strava activity access to generate stories.",
+          },
+        },
+        403,
+      ) as unknown as Response,
+    );
+
+    await expect(
+      fetchActivities({ startDate: "2026-01-01", endDate: "2026-01-31", activityType: "all" }),
+    ).rejects.toEqual(
+      expect.objectContaining<Partial<ApiError>>({
+        message: "Trailume needs Strava activity access to generate stories.",
+        status: 403,
+        code: "STRAVA_ACTIVITY_PERMISSION_MISSING",
+      }),
+    );
+  });
+
   it("posts to Strava disconnect endpoint with credentials", async () => {
     const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue(
       mockJsonResponse({

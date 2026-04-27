@@ -11,6 +11,7 @@ from app.services.strava.schemas import (
     StravaTokenResponse,
     normalize_activity,
 )
+from app.services.strava.permissions import StravaPermissions
 from app.services.strava.token_store import StravaTokenSet
 
 
@@ -26,7 +27,7 @@ class StravaService:
     auth_base_url = "https://www.strava.com/oauth/authorize"
     token_url = "https://www.strava.com/oauth/token"
     api_base_url = "https://www.strava.com/api/v3"
-    requested_scopes = ("read", "activity:read_all")
+    requested_scopes = ("read", "activity:read", "activity:read_all")
 
     def build_authorization_url(self, *, state: str) -> str:
         if not _is_configured(settings.strava_client_id, "your_client_id"):
@@ -43,9 +44,11 @@ class StravaService:
         }
         return f"{self.auth_base_url}?{urlencode(params)}"
 
+    def parse_permissions(self, scope: str | None) -> StravaPermissions:
+        return StravaPermissions.from_scope_string(scope)
+
     def has_required_activity_scope(self, scope: str | None) -> bool:
-        granted_scopes = set((scope or "").split(","))
-        return "activity:read_all" in granted_scopes
+        return self.parse_permissions(scope).has_activity_read
 
     def exchange_authorization_code(self, code: str) -> StravaTokenResponse:
         payload = {
