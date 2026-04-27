@@ -74,6 +74,7 @@ def generate_recap(request: Request, payload: RecapGenerateRequest) -> RecapGene
         chartPoints=insights.chart_points,
         trendSeries=insights.trend_series,
         standoutActivities=insights.standout_activities,
+        mapData=insights.map_data,
         insightFlags=insights.insight_flags,
         metadata=insights.metadata,
     )

@@ -58,8 +58,14 @@ Responsibilities inside this boundary:
 - Refresh access tokens when needed.
 - Fetch athlete activities from Strava.
 - Normalize Strava activity payloads into Trailume domain models.
+- Normalize optional map fields such as start/end coordinates and summary polylines.
 
 Everything outside this boundary should consume normalized models and remain provider-agnostic.
+
+Map data note:
+- The MVP uses geographic fields already returned with Strava activity summaries when available.
+- Detailed Strava stream fetching is not part of the current flow; add it only behind the Strava boundary and document endpoint usage if a future feature needs higher-fidelity route data.
+- Recap API responses expose optional provider-neutral `mapData`, not raw Strava response objects.
 
 Strava OAuth scope behavior:
 - Trailume requests `read`, `activity:read`, and optional `activity:read_all`.
@@ -162,3 +168,19 @@ Contributor guidance:
 6. Return a single recap payload consumed directly by frontend sections.
 
 This preserves a clear separation between provider IO, deterministic computation, and presentation.
+
+---
+
+## 10) Recap map rendering
+
+The recap page includes an optional map section titled "Where this story happened" when the backend returns `mapData`.
+
+Frontend approach:
+- `apps/web` uses Leaflet/React Leaflet with OpenStreetMap tile URLs.
+- Leaflet rendering is isolated in a client-only component to avoid Next.js SSR issues.
+- Summary polylines render as route lines; activities without polylines can still render start/end markers.
+- When geographic data is absent, the map section is hidden so the recap never shows a broken map container.
+
+Testing and demo behavior:
+- Tests pass mocked map payloads, including `isDemoData: true`, so map section behavior is covered without live Strava or external map tile access.
+- Production recap generation does not synthesize demo routes into real user recaps.

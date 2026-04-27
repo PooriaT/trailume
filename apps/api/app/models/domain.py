@@ -16,6 +16,9 @@ class Activity:
     elevation_gain_m: float = 0.0
     moving_time_s: int | None = None
     elapsed_time_s: int | None = None
+    start_latlng: tuple[float, float] | None = None
+    end_latlng: tuple[float, float] | None = None
+    summary_polyline: str | None = None
 
 
 @dataclass
@@ -27,6 +30,7 @@ class InsightBundle:
     chart_points: list[dict[str, float | str | int]]
     trend_series: list[dict[str, float | str | int]]
     standout_activities: list[dict[str, str | float | int | None]]
+    map_data: dict[str, object] | None
     insight_flags: dict[str, bool | str | int | float | None]
     metadata: dict[str, str | int | bool | None | list[str] | dict[str, float | int | None]]
 

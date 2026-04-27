@@ -83,6 +83,27 @@ class StandoutActivity(BaseModel):
     moving_time_s: int | None = Field(default=None, alias="movingTimeS")
 
 
+class MapCoordinate(BaseModel):
+    lat: float
+    lng: float
+
+
+class RecapMapActivity(BaseModel):
+    id: str
+    name: str
+    activity_type: str = Field(alias="activityType")
+    distance_m: float = Field(alias="distanceM")
+    elevation_gain_m: float = Field(alias="elevationGainM")
+    start_coordinate: MapCoordinate | None = Field(default=None, alias="startCoordinate")
+    end_coordinate: MapCoordinate | None = Field(default=None, alias="endCoordinate")
+    summary_polyline: str | None = Field(default=None, alias="summaryPolyline")
+
+
+class RecapMapData(BaseModel):
+    activities: list[RecapMapActivity]
+    is_demo_data: bool = Field(default=False, alias="isDemoData")
+
+
 class ActivityTypeTotals(BaseModel):
     activity_count: int = Field(alias="activityCount")
     distance_m: float = Field(alias="distanceM")
@@ -146,6 +167,7 @@ class RecapGenerateResponse(BaseModel):
     chart_points: list[ChartPoint] = Field(alias="chartPoints")
     trend_series: list[TrendPoint] = Field(alias="trendSeries")
     standout_activities: list[StandoutActivity] = Field(alias="standoutActivities")
+    map_data: RecapMapData | None = Field(default=None, alias="mapData")
     insight_flags: InsightFlags = Field(alias="insightFlags")
     metadata: RecapMetadata
 
