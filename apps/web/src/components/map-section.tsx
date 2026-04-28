@@ -213,7 +213,9 @@ export function MapSection({
       <p className="muted">
         {routeCount > 0
           ? `${routeCount} route ${routeCount === 1 ? "line" : "lines"} shown from available activity geometry.`
-          : "Route lines are not available, so start and end points are shown instead."}
+          : privacyMode
+            ? "Route lines are not available. Privacy mode is currently hiding start and end points."
+            : "Route lines are not available, so start and end points are shown instead."}
       </p>
     </section>
   );

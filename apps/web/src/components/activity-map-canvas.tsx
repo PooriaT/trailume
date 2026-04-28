@@ -114,7 +114,14 @@ export function ActivityMapCanvas({
     );
   }
 
-  const hasSelectedActivity = selectedActivityId !== null;
+  const selectedRouteData =
+    selectedActivityId === null
+      ? null
+      : routeData.find((item) => item.activity.id === selectedActivityId) ?? null;
+  const hasVisibleSelectedActivity =
+    selectedRouteData !== null &&
+    (selectedRouteData.renderedRoute.length > 1 ||
+      (!privacyMode && Boolean(selectedRouteData.start || selectedRouteData.end)));
   const orderedRouteData = [...routeData].sort((left, right) => {
     if (left.activity.id === selectedActivityId) {
       return 1;
@@ -135,7 +142,7 @@ export function ActivityMapCanvas({
       {orderedRouteData.map((item) => {
         const isSelected = selectedActivityId === item.activity.id;
         const isStandout = highlightedActivityIdSet.has(item.activity.id);
-        const isDimmed = hasSelectedActivity && !isSelected;
+        const isDimmed = hasVisibleSelectedActivity && !isSelected;
         const routeWeight = isSelected ? 7 : isStandout ? 6 : 4;
         const routeOpacity = isDimmed ? 0.24 : isStandout || isSelected ? 0.95 : 0.7;
         const markerRadius = isSelected ? 8 : isStandout ? 7 : 6;
