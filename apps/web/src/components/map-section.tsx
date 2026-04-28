@@ -23,6 +23,24 @@ function formatDistance(distanceM: number) {
   return `${(distanceM / 1000).toFixed(1)} km`;
 }
 
+function formatActivityDate(startDate: string | null | undefined) {
+  if (!startDate) {
+    return "Date unavailable";
+  }
+
+  const [year, month, day] = startDate.split("T")[0].split("-").map(Number);
+  if (!year || !month || !day) {
+    return startDate;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
 function formatElevation(elevationGainM: number) {
   return elevationGainM > 0 ? `${Math.round(elevationGainM)} m gain` : "No gain recorded";
 }
@@ -178,6 +196,7 @@ export function MapSection({
                 aria-pressed={isSelected}
               >
                 <span className="map-activity-name">{activity.name}</span>
+                <span className="map-activity-date">{formatActivityDate(activity.startDate)}</span>
                 <span className="muted">
                   {formatActivityType(activity.activityType)} - {formatDistance(activity.distanceM)}
                   {" - "}

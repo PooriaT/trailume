@@ -52,6 +52,7 @@ describe("ActivityMapCanvas", () => {
   const activity = {
     id: "1",
     name: "Privacy Route",
+    startDate: "2026-01-03",
     activityType: "cycling",
     distanceM: 12000,
     elevationGainM: 140,

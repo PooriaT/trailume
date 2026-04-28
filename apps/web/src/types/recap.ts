@@ -35,6 +35,7 @@ export interface MapCoordinate {
 export interface RecapMapActivity {
   id: string;
   name: string;
+  startDate: string;
   activityType: string;
   distanceM: number;
   elevationGainM: number;

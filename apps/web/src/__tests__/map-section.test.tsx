@@ -74,6 +74,7 @@ describe("MapSection", () => {
               {
                 id: "1",
                 name: "Seawall Ride",
+                startDate: "2026-01-03",
                 activityType: "cycling",
                 distanceM: 12300,
                 elevationGainM: 80,
@@ -92,6 +93,7 @@ describe("MapSection", () => {
     expect(screen.getByTestId("map-canvas")).toHaveTextContent("1 mapped activities");
     expect(screen.getByTestId("map-canvas")).toHaveTextContent("privacy:on");
     expect(screen.getByText("Seawall Ride")).toBeInTheDocument();
+    expect(screen.getByText("Jan 3, 2026")).toBeInTheDocument();
     expect(screen.getByText("Mapped activities")).toBeInTheDocument();
     expect(screen.getByText("Route lines available")).toBeInTheDocument();
     expect(screen.getByText("Marker fallbacks")).toBeInTheDocument();
@@ -116,6 +118,7 @@ describe("MapSection", () => {
               {
                 id: "1",
                 name: "Demo Point-to-Point Run",
+                startDate: "2026-01-04",
                 activityType: "running",
                 distanceM: 5000,
                 elevationGainM: 20,
@@ -162,6 +165,7 @@ describe("MapSection", () => {
               {
                 id: "1",
                 name: "Seawall Ride",
+                startDate: "2026-01-03",
                 activityType: "cycling",
                 distanceM: 12300,
                 elevationGainM: 80,
@@ -191,6 +195,7 @@ describe("MapSection", () => {
               {
                 id: "1",
                 name: "Seawall Ride",
+                startDate: "2026-01-03",
                 activityType: "cycling",
                 distanceM: 12300,
                 elevationGainM: 80,
@@ -199,6 +204,7 @@ describe("MapSection", () => {
               {
                 id: "2",
                 name: "Hill Repeats",
+                startDate: "2026-01-05",
                 activityType: "running",
                 distanceM: 7000,
                 elevationGainM: 320,
@@ -233,6 +239,7 @@ describe("MapSection", () => {
               {
                 id: "1",
                 name: "Seawall Ride",
+                startDate: "2026-01-03",
                 activityType: "cycling",
                 distanceM: 12300,
                 elevationGainM: 80,

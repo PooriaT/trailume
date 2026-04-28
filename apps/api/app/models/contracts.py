@@ -91,6 +91,7 @@ class MapCoordinate(BaseModel):
 class RecapMapActivity(BaseModel):
     id: str
     name: str
+    start_date: str = Field(alias="startDate")
     activity_type: str = Field(alias="activityType")
     distance_m: float = Field(alias="distanceM")
     elevation_gain_m: float = Field(alias="elevationGainM")

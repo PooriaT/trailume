@@ -720,6 +720,12 @@ select[aria-invalid="true"] {
   font-weight: 700;
 }
 
+.map-activity-date {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .map-standout-reasons {
   color: #9a3412;
   font-size: 0.85rem;
