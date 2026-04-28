@@ -445,6 +445,7 @@ class AnalyticsEngine:
                 {
                     "id": activity.id,
                     "name": activity.name,
+                    "startDate": activity.start_time.date().isoformat(),
                     "activityType": activity.activity_type,
                     "distanceM": round(activity.distance_m, 2),
                     "elevationGainM": round(activity.elevation_gain_m, 2),

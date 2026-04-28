@@ -98,6 +98,7 @@ def test_analytics_map_data_includes_only_activities_with_geometry() -> None:
         {
             "id": "1",
             "name": "Mapped Ride",
+            "startDate": "2026-01-03",
             "activityType": "cycling",
             "distanceM": 12000,
             "elevationGainM": 140,

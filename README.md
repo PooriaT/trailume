@@ -248,9 +248,12 @@ Trailume uses a lightweight OpenStreetMap-compatible map MVP:
 - Backend Strava responses are normalized into Trailume activity models with optional start/end coordinates and summary polylines. Raw Strava map structures are not exposed to the frontend.
 - Recap responses include optional `mapData` only when at least one selected activity has usable route or coordinate data.
 - The web app renders maps with Leaflet/React Leaflet and OpenStreetMap tile URLs. Tests use mocked/demo map data and do not require live Strava or external map services.
-- If route polylines are unavailable, the map falls back to start/end markers. If no geographic data exists, the recap hides the map section.
+- The map section links mapped activities to deterministic `standoutActivities` by activity ID, so longest, highest-elevation, and fastest mapped activities can be highlighted without asking the narrative model to make geographic claims.
+- A simple activity list/legend lets users focus one route or return to all routes. Selecting a route emphasizes it and dims the others.
+- Privacy mode defaults on in the frontend rendering layer. It hides exact start/end markers and trims decoded route lines when practical without mutating backend recap data.
+- If route polylines are unavailable, the map falls back to start/end markers when privacy mode is off. If no geographic data exists, the recap hides the map section.
 
-Current limitations: Trailume does not fetch detailed Strava streams yet, does not animate routes, and does not ask the narrative model to invent location claims. Future improvements can add stream fetching for selected activities, route simplification, repeated-route overlays, and provider-neutral map normalization for additional activity sources.
+Current limitations: Trailume does not fetch detailed Strava streams yet, does not animate routes, and does not ask the narrative model to invent location claims. Future improvements can fetch detailed streams only for standout or selected activities, add route simplification, add repeated-route overlays, and expand provider-neutral map normalization for additional activity sources.
 
 ## Known limitations
 
