@@ -590,7 +590,7 @@ select[aria-invalid="true"] {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  min-height: 320px;
+  height: 420px;
   overflow: hidden;
   display: grid;
 }
@@ -598,6 +598,7 @@ select[aria-invalid="true"] {
 .activity-map,
 .map-loading,
 .map-empty-state {
+  height: 100%;
   min-height: 320px;
   width: 100%;
 }
@@ -679,13 +680,17 @@ select[aria-invalid="true"] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
   gap: 0.75rem;
-  align-items: stretch;
+  align-items: start;
 }
 
 .map-activity-list {
   display: grid;
   gap: 0.5rem;
   align-content: start;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  scrollbar-gutter: stable;
 }
 
 .map-activity-item {
@@ -814,6 +819,14 @@ select[aria-invalid="true"] {
 
   .map-experience-grid {
     grid-template-columns: 1fr;
+  }
+
+  .map-shell {
+    height: 340px;
+  }
+
+  .map-activity-list {
+    max-height: 340px;
   }
 
   .skeleton-grid,
