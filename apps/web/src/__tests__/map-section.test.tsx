@@ -107,7 +107,9 @@ describe("MapSection", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows marker fallback text when only coordinates are available", () => {
+  it("shows privacy-aware marker fallback text when only coordinates are available", async () => {
+    const user = userEvent.setup();
+
     render(
       <MapSection
         recap={{
@@ -133,6 +135,13 @@ describe("MapSection", () => {
     );
 
     expect(screen.getByText("Demo data")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Route lines are not available. Privacy mode is currently hiding start and end points.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Privacy mode" }));
     expect(
       screen.getByText("Route lines are not available, so start and end points are shown instead."),
     ).toBeInTheDocument();
